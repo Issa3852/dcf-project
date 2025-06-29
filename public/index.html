@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Company Dashboard</title>
+
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/export-data.js"></script>
+  <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/choices.js/public/assets/scripts/choices.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/choices.js/public/assets/styles/choices.min.css" />
+
+  <style>
+    :root {
+      --bg: #3c31b0;
+      --panel: #2a2a2d;
+      --text: #f0f0f0;
+      --border: #444;
+      --shadow: rgba(0, 0, 0, 0.3);
+      --input-bg: #3a3a3d;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      /* font-family: 'Segoe UI', Tahoma, sans-serif; */
+      font-family: Verdana, sans-serif;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 20px;
+      padding: 20px;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .sidebar {
+      background-color: var(--panel);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px var(--shadow);
+      height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+
+    .panel {
+      background-color: var(--panel);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 8px var(--shadow);
+      overflow-y: auto;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      margin-top: 15px;
+      display: block;
+      font-weight: bold;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 15px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background-color: var(--input-bg);
+      color: var(--text);
+    }
+
+    .choices__inner {
+      background-color: var(--input-bg) !important;
+      color: var(--text) !important;
+      border-radius: 6px;
+    }
+
+    .choices__list--dropdown, .choices__list[aria-expanded] {
+      background-color: var(--input-bg) !important;
+      color: var(--text) !important;
+    }
+
+    #kpiCards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin: 20px 0;
+    }
+
+    #kpiCards div {
+      background: #3a3a3d;
+      padding: 10px 15px;
+      border-radius: 5px;
+      flex: 1;
+      min-width: 100px;
+      text-align: center;
+    }
+
+    .chart-container {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <h1>Dashboard Controls</h1>
+
+    <label for="companyDropdown">Select Company:</label>
+    <select id="companyDropdown"></select>
+
+    <label for="yearDropdown">Calendar Year:</label>
+    <select id="yearDropdown"></select>
+
+    <label for="periodDropdown">Reporting Period:</label>
+    <select id="periodDropdown"></select>
+
+    <label for="chartType">Chart Type:</label>
+    <select id="chartType">
+      <option value="column">Bar</option>
+      <option value="line">Line</option>
+      <option value="area">Area</option>
+    </select>
+
+    <label for="trendCompanyDropdown">Companies to Compare:</label>
+    <select id="trendCompanyDropdown" multiple></select>
+
+    <label for="metricDropdown">Metric:</label>
+    <select id="metricDropdown">
+      <option value="revenue">Revenue</option>
+      <option value="ebitda">EBITDA</option>
+      <option value="netIncome">Net Income</option>
+    </select>
+
+    <button onclick="toggleTheme()">Toggle Theme</button>
+    <button onclick="downloadChart()">Download Chart</button>
+
+    <!-- 🔗 NEW DCF NAVIGATION BUTTON -->
+    <a href="/dcf.html" target="_self">
+      <button>📉 DCF Valuation</button>
+    </a>
+  </div>
+
+  <div class="panel">
+    <div id="kpiCards"></div>
+    <div class="chart-container">
+      <div id="chartBox"></div>
+    </div>
+    <div class="chart-container">
+      <div id="trendChartBox"></div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('theme') === 'light') {
+        document.body.classList.add('light');
+      }
+
+      const companyDropdown = document.getElementById('companyDropdown');
+      const yearDropdown = document.getElementById('yearDropdown');
+      const periodDropdown = document.getElementById('periodDropdown');
+      const chartType = document.getElementById('chartType');
+      const trendCompany = document.getElementById('trendCompanyDropdown');
+      const metricDropdown = document.getElementById('metricDropdown');
+
+      function populateDropdown(dropdown, values) {
+        dropdown.innerHTML = '';
+        values.forEach(v => dropdown.add(new Option(v, v)));
+      }
+
+      fetch('/companies').then(r => r.json()).then(data => {
+        populateDropdown(companyDropdown, data);
+        populateDropdown(trendCompany, data);
+        new Choices(companyDropdown);
+        new Choices(trendCompany);
+      });
+
+      fetch('/years').then(r => r.json()).then(data => populateDropdown(yearDropdown, data));
+      fetch('/periods').then(r => r.json()).then(data => populateDropdown(periodDropdown, data));
+
+      function fetchFilteredData() {
+        const company = companyDropdown.value;
+        const year = yearDropdown.value;
+        const period = periodDropdown.value;
+        const type = chartType.value;
+        if (!company || !year || !period) return;
+
+        fetch(`/filtered-financials?company=${company}&year=${year}&period=${period}`)
+          .then(r => r.json())
+          .then(data => {
+            if (!data.length) return alert('No data found');
+            const { revenue, netIncome, ebitda } = data[0];
+
+            document.getElementById('kpiCards').innerHTML = `
+              <div><strong>Revenue</strong><br>$${revenue.toLocaleString()}</div>
+              <div><strong>Net Income</strong><br>$${netIncome.toLocaleString()}</div>
+              <div><strong>EBITDA</strong><br>$${ebitda.toLocaleString()}</div>`;
+
+            Highcharts.chart('chartBox', {
+              chart: { type },
+              title: { text: `${company.toUpperCase()} – ${year} ${period}` },
+              xAxis: { categories: ['Revenue', 'Net Income', 'EBITDA'] },
+              yAxis: { title: { text: 'Amount ($)' } },
+              series: [{ name: company, data: [revenue, netIncome, ebitda] }]
+            });
+          });
+      }
+
+      function loadTrendChart() {
+        const metric = metricDropdown.value;
+        const companies = Array.from(trendCompany.selectedOptions).map(o => o.value);
+        if (!metric || companies.length === 0) return;
+
+        const seriesPromises = companies.map(company =>
+          fetch(`/trend-data?company=${company}&metric=${metric}`)
+            .then(res => res.json())
+            .then(data => ({ name: company, data: data.map(d => d.value) }))
+        );
+
+        Promise.all(seriesPromises).then(series => {
+          fetch(`/trend-data?company=${companies[0]}&metric=${metric}`)
+            .then(res => res.json())
+            .then(data => {
+              const labels = data.map(d => d.label);
+              Highcharts.chart('trendChartBox', {
+                chart: { type: 'line' },
+                title: { text: `${metric.toUpperCase()} – Last 4 Quarters` },
+                xAxis: { categories: labels },
+                yAxis: { title: { text: 'Amount ($)' } },
+                series: series
+              });
+            });
+        });
+      }
+
+      companyDropdown.addEventListener('change', fetchFilteredData);
+      yearDropdown.addEventListener('change', fetchFilteredData);
+      periodDropdown.addEventListener('change', fetchFilteredData);
+      chartType.addEventListener('change', fetchFilteredData);
+      trendCompany.addEventListener('change', loadTrendChart);
+      metricDropdown.addEventListener('change', loadTrendChart);
+    });
+
+    function toggleTheme() {
+      document.body.classList.toggle('light');
+      localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+    }
+
+    function downloadChart() {
+      const charts = Highcharts.charts.filter(c => !!c);
+      if (charts.length > 0) charts[0].exportChartLocal();
+    }
+  </script>
+</body>
+</html>

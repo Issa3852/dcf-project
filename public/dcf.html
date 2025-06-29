@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DCF Valuation – AAPL</title>
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #f4f4f4;
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+    }
+    input {
+      width: 200px;
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+    #chartContainer {
+      margin-top: 40px;
+      height: 400px;
+    }
+    table {
+      width: 100%;
+      margin-top: 30px;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>Discounted Cash Flow (DCF) – AAPL</h1>
+
+  <div>
+    <label>Projection Years: <input type="number" id="years" value="5"></label>
+    <label>Growth Rate (%): <input type="number" id="growth" value="5"></label>
+    <label>Discount Rate (%): <input type="number" id="discount" value="10"></label>
+    <label>Terminal Growth Rate (%): <input type="number" id="terminal" value="2"></label>
+    <button onclick="runDCF()">Run DCF</button>
+    <button onclick="window.location.href='index.html'">← Back to Dashboard</button>
+  </div>
+
+  <div id="valuationOutput"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Net Income</th>
+        <th>D&A</th>
+        <th>Estimated FCF</th>
+      </tr>
+    </thead>
+    <tbody id="fcfTableBody"></tbody>
+  </table>
+
+  <div id="chartContainer"></div>
+
+  <script>
+    let historical = [];
+
+    fetch('/dcf-data')
+      .then(res => res.json())
+      .then(data => historical = data);
+
+    function runDCF() {
+      if (!historical.length) {
+        alert("DCF data not loaded yet.");
+        return;
+      }
+
+      const years = parseInt(document.getElementById('years').value);
+      const g = parseFloat(document.getElementById('growth').value) / 100;
+      const r = parseFloat(document.getElementById('discount').value) / 100;
+      const tgr = parseFloat(document.getElementById('terminal').value) / 100;
+
+      const lastFCF = historical.at(-1)?.estimatedFCF;
+      if (!lastFCF || isNaN(lastFCF)) {
+        alert("Invalid FCF data.");
+        return;
+      }
+
+      const projections = [];
+      let fcf = lastFCF;
+      let npv = 0;
+
+      for (let i = 1; i <= years; i++) {
+        fcf *= (1 + g);
+        const discounted = fcf / Math.pow(1 + r, i);
+        projections.push({ year: `Year ${i}`, fcf, discounted });
+        npv += discounted;
+      }
+
+      const terminalValue = (fcf * (1 + tgr)) / (r - tgr);
+      const terminalDiscounted = terminalValue / Math.pow(1 + r, years);
+      const totalValue = npv + terminalDiscounted;
+
+      document.getElementById('valuationOutput').innerHTML = `
+        <h3>Estimated Enterprise Value: $${totalValue.toLocaleString()}</h3>
+        <p>(NPV: $${npv.toLocaleString()}, Terminal Value: $${terminalDiscounted.toLocaleString()})</p>
+      `;
+
+      const tableRows = historical.map(row => `
+        <tr>
+          <td>${row.calendarYear}</td>
+          <td>$${Number(row.netIncome).toLocaleString()}</td>
+          <td>$${Number(row.depreciationAndAmortization).toLocaleString()}</td>
+          <td>$${Number(row.estimatedFCF).toLocaleString()}</td>
+        </tr>
+      `).join('');
+      document.getElementById('fcfTableBody').innerHTML = tableRows;
+
+      Highcharts.chart('chartContainer', {
+        chart: { type: 'column' },
+        title: { text: 'Projected Free Cash Flow' },
+        xAxis: { categories: projections.map(p => p.year) },
+        yAxis: { title: { text: 'FCF ($)' } },
+        series: [{ name: 'Projected FCF', data: projections.map(p => p.fcf) }]
+      });
+    }
+  </script>
+</body>
+</html>
