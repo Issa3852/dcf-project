@@ -59,15 +59,6 @@
       border: 1px solid #ddd;
       cursor: text;
     }
-    .breakdown {
-      margin-top: 40px;
-      background-color: #fff;
-      padding: 15px 20px;
-      border-radius: 10px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.05);
-      max-width: 900px;
-      line-height: 1.6;
-    }
     .psi-link {
       position: fixed;
       top: 8px;
@@ -90,9 +81,7 @@
 </head>
 
 <body>
-
   <a href="home.html" class="psi-link">Ψ</a>
-
   <h1>DCF Valuation — AAPL</h1>
 
   <div class="table-container">
@@ -113,105 +102,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>Revenue</td>
-          <td>274,515</td><td>365,817</td><td>394,328</td><td>383,285</td><td>391,035</td>
-          <td class="projection" contenteditable="true">400000</td>
-          <td class="projection" contenteditable="true">415000</td>
-          <td class="projection" contenteditable="true">430000</td>
-          <td class="projection" contenteditable="true">445000</td>
-          <td class="projection" contenteditable="true">460000</td>
-        </tr>
-        <tr>
-          <td>COGS</td>
-          <td>169,559</td><td>212,981</td><td>223,546</td><td>214,137</td><td>210,352</td>
-          <td class="projection" contenteditable="true">220000</td>
-          <td class="projection" contenteditable="true">225000</td>
-          <td class="projection" contenteditable="true">230000</td>
-          <td class="projection" contenteditable="true">235000</td>
-          <td class="projection" contenteditable="true">240000</td>
-        </tr>
-        <tr class="bold-row">
-          <td>Gross Profit</td>
-          <td>104,956</td><td>152,836</td><td>170,782</td><td>169,148</td><td>180,683</td>
-          <td class="projection calc-gp">-</td>
-          <td class="projection calc-gp">-</td>
-          <td class="projection calc-gp">-</td>
-          <td class="projection calc-gp">-</td>
-          <td class="projection calc-gp">-</td>
-        </tr>
-        <tr>
-          <td>SG&A</td>
-          <td>19,916</td><td>21,973</td><td>25,094</td><td>24,932</td><td>26,097</td>
-          <td class="projection" contenteditable="true">27000</td>
-          <td class="projection" contenteditable="true">28000</td>
-          <td class="projection" contenteditable="true">29000</td>
-          <td class="projection" contenteditable="true">30000</td>
-          <td class="projection" contenteditable="true">31000</td>
-        </tr>
-        <tr>
-          <td>R&D</td>
-          <td>18,752</td><td>21,914</td><td>26,251</td><td>29,915</td><td>31,370</td>
-          <td class="projection" contenteditable="true">32000</td>
-          <td class="projection" contenteditable="true">33000</td>
-          <td class="projection" contenteditable="true">34000</td>
-          <td class="projection" contenteditable="true">35000</td>
-          <td class="projection" contenteditable="true">36000</td>
-        </tr>
-        <tr class="bold-row">
-          <td>Operating Income (EBIT)</td>
-          <td>66,288</td><td>108,949</td><td>119,437</td><td>114,301</td><td>123,216</td>
-          <td class="projection calc-ebit">-</td>
-          <td class="projection calc-ebit">-</td>
-          <td class="projection calc-ebit">-</td>
-          <td class="projection calc-ebit">-</td>
-          <td class="projection calc-ebit">-</td>
-        </tr>
-        <tr>
-          <td>Tax Rate (%)</td>
-          <td>15.0</td><td>15.0</td><td>16.0</td><td>15.0</td><td>16.0</td>
-          <td class="projection" contenteditable="true">16.0</td>
-          <td class="projection" contenteditable="true">16.0</td>
-          <td class="projection" contenteditable="true">16.0</td>
-          <td class="projection" contenteditable="true">16.0</td>
-          <td class="projection" contenteditable="true">16.0</td>
-        </tr>
-        <tr>
-          <td>D&A</td>
-          <td>11,056</td><td>11,284</td><td>11,104</td><td>11,519</td><td>11,445</td>
-          <td class="projection" contenteditable="true">11500</td>
-          <td class="projection" contenteditable="true">11600</td>
-          <td class="projection" contenteditable="true">11700</td>
-          <td class="projection" contenteditable="true">11800</td>
-          <td class="projection" contenteditable="true">11900</td>
-        </tr>
-        <tr>
-          <td>CapEx</td>
-          <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
-          <td class="projection" contenteditable="true">-12000</td>
-          <td class="projection" contenteditable="true">-12500</td>
-          <td class="projection" contenteditable="true">-13000</td>
-          <td class="projection" contenteditable="true">-13500</td>
-          <td class="projection" contenteditable="true">-14000</td>
-        </tr>
-        <tr>
-          <td>Δ Working Capital</td>
-          <td>-4,464</td><td>-</td><td>-</td><td>-</td><td>-</td>
-          <td class="projection" contenteditable="true">-2000</td>
-          <td class="projection" contenteditable="true">-2200</td>
-          <td class="projection" contenteditable="true">-2400</td>
-          <td class="projection" contenteditable="true">-2500</td>
-          <td class="projection" contenteditable="true">-2600</td>
-        </tr>
-        <tr class="bold-row">
-          <td>FCFF</td>
-          <td>56,608</td><td>94,422</td><td>100,137</td><td>97,560</td><td>93,467</td>
-          <td class="projection calc-fcff">-</td>
-          <td class="projection calc-fcff">-</td>
-          <td class="projection calc-fcff">-</td>
-          <td class="projection calc-fcff">-</td>
-          <td class="projection calc-fcff">-</td>
-        </tr>
+        <!-- rows will be filled dynamically -->
       </tbody>
     </table>
   </div>
@@ -225,63 +116,109 @@
       return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
     }
 
-    async function updateDCF() {
+    function updateDCF() {
       const table = document.getElementById('dcfTable');
       const rows = table.querySelectorAll('tbody tr');
 
-      const rev = [...rows[0].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
-      const cogs = [...rows[1].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
-      const sga = [...rows[3].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
-      const rnd = [...rows[4].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
-      const tax_rate = [...rows[6].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
-      const da = [...rows[7].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
-      const capex = [...rows[8].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
-      const wc = [...rows[9].querySelectorAll('td')].slice(5).map(td => parseNumber(td.innerText));
+      const rev = [...rows[0].querySelectorAll('td')].slice(1);
+      const cogs = [...rows[1].querySelectorAll('td')].slice(1);
+      const gp = [...rows[2].querySelectorAll('td')].slice(1);
+      const sga = [...rows[3].querySelectorAll('td')].slice(1);
+      const rnd = [...rows[4].querySelectorAll('td')].slice(1);
+      const ebit = [...rows[5].querySelectorAll('td')].slice(1);
+      const taxrate = [...rows[6].querySelectorAll('td')].slice(1);
+      const da = [...rows[7].querySelectorAll('td')].slice(1);
+      const capex = [...rows[8].querySelectorAll('td')].slice(1);
+      const wc = [...rows[9].querySelectorAll('td')].slice(1);
+      const fcff = [...rows[10].querySelectorAll('td')].slice(1);
 
-      const payload = {
-        revenue: rev,
-        cogs: cogs,
-        sga: sga,
-        rnd: rnd,
-        tax_rate: tax_rate,
-        da: da,
-        capex: capex,
-        wc: wc
-      };
+      for (let i = 0; i < rev.length; i++) {
+        const gpVal = parseNumber(rev[i].innerText) - parseNumber(cogs[i].innerText);
+        gp[i].innerText = formatNumber(gpVal);
 
-      const response = await fetch('/api/run_dcf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+        const ebitVal = gpVal - parseNumber(sga[i].innerText) - parseNumber(rnd[i].innerText);
+        ebit[i].innerText = formatNumber(ebitVal);
 
-      const result = await response.json();
+        const tax = ebitVal * (parseNumber(taxrate[i].innerText) / 100);
+        const nopat = ebitVal - tax;
 
-      const gpCells = [...rows[2].querySelectorAll('td')].slice(5);
-      result.gp.forEach((val, i) => {
-        gpCells[i].innerText = formatNumber(val);
-      });
-
-      const ebitCells = [...rows[5].querySelectorAll('td')].slice(5);
-      result.ebit.forEach((val, i) => {
-        ebitCells[i].innerText = formatNumber(val);
-      });
-
-      const fcffCells = [...rows[10].querySelectorAll('td')].slice(5);
-      result.fcff.forEach((val, i) => {
-        fcffCells[i].innerText = formatNumber(val);
-      });
+        const fcffVal = nopat + parseNumber(da[i].innerText) + parseNumber(capex[i].innerText) - parseNumber(wc[i].innerText);
+        fcff[i].innerText = formatNumber(fcffVal);
+      }
     }
 
-    document.querySelectorAll('td[contenteditable]').forEach(cell => {
-      cell.addEventListener('input', function () {
-        this.innerText = formatNumber(parseNumber(this.innerText));
+    async function populateHistoricalData() {
+      try {
+        const res = await fetch('http://localhost:3000/filtered-financials?company=AAPL');
+        if (!res.ok) throw new Error(res.statusText);
+        const data = await res.json();
+
+        const grouped = {};
+        data.forEach(row => {
+          const y = row.calendar_year;
+          if (!grouped[y]) grouped[y] = { revenue: 0, cogs: 0, sga: 0, rnd: 0, da: 0, capex: 0, wc: 0, tax: 0 };
+          grouped[y].revenue += Number(row.revenue || 0);
+          grouped[y].cogs += Number(row.cogs || 0);
+          grouped[y].sga += Number(row.sga || 0);
+          grouped[y].rnd += Number(row.rnd || 0);
+          grouped[y].da += Number(row.da || 0);
+          grouped[y].capex += Number(row.capex || 0);
+          grouped[y].wc += Number(row.wc || 0);
+          grouped[y].tax += Number(row.tax || 0);
+        });
+
+        const years = [2020, 2021, 2022, 2023, 2024];
+        const metrics = ['Revenue', 'COGS', 'Gross Profit', 'SG&A', 'R&D', 'Operating Income (EBIT)', 'Tax Rate (%)', 'D&A', 'CapEx', 'Δ Working Capital', 'FCFF'];
+
+        const tbody = document.querySelector('#dcfTable tbody');
+        tbody.innerHTML = '';
+
+        metrics.forEach((metric, idx) => {
+          const row = document.createElement('tr');
+          if (['Gross Profit', 'Operating Income (EBIT)', 'FCFF'].includes(metric)) row.classList.add('bold-row');
+
+          const label = document.createElement('td');
+          label.innerText = metric;
+          row.appendChild(label);
+
+          years.forEach(y => {
+            const td = document.createElement('td');
+            let val = '';
+            if (grouped[y]) {
+              const g = grouped[y];
+              if (metric === 'Revenue') val = g.revenue;
+              else if (metric === 'COGS') val = g.cogs;
+              else if (metric === 'SG&A') val = g.sga;
+              else if (metric === 'R&D') val = g.rnd;
+              else if (metric === 'D&A') val = g.da;
+              else if (metric === 'CapEx') val = g.capex;
+              else if (metric === 'Δ Working Capital') val = g.wc;
+              else if (metric === 'Tax Rate (%)') val = 16.0;
+              else val = '-';
+            }
+            td.innerText = typeof val === 'number' ? formatNumber(val) : val;
+            row.appendChild(td);
+          });
+
+          for (let i = 0; i < 5; i++) {
+            const td = document.createElement('td');
+            td.classList.add('projection');
+            if (!['Gross Profit', 'Operating Income (EBIT)', 'FCFF'].includes(metric)) td.contentEditable = true;
+            if (metric === 'Tax Rate (%)') td.innerText = '16.0';
+            else td.innerText = '-';
+            row.appendChild(td);
+          }
+
+          tbody.appendChild(row);
+        });
+
         updateDCF();
-      });
-    });
+      } catch (e) {
+        console.error('Error fetching financials:', e);
+      }
+    }
 
-    updateDCF();
+    populateHistoricalData();
   </script>
-
 </body>
 </html>

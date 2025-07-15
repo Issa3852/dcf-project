@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quarterly Calculations</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    label, select, input, button { font-size: 16px; margin-right: 10px; }
+    h1 { margin-bottom: 10px; }
+    .controls { margin-bottom: 20px; }
+    .quarter, .totals { margin-bottom: 20px; }
+    .quarter h2, .totals h2 { margin-bottom: 5px; font-size: 18px; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin-bottom: 4px; }
+    #message { color: red; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Quarterly Breakdown by Year</h1>
+  <div class="controls">
+    <label for="tickerInput">Ticker:</label>
+    <input id="tickerInput" type="text" value="AAPL" maxlength="5" />
+    <label for="yearSelect">Select Year:</label>
+    <select id="yearSelect"></select>
+    <button id="goButton">Go</button>
+  </div>
+  <div id="message"></div>
+  <div id="results"></div>
+
+  <script>
+    let data = [];
+    const API_BASE = 'http://localhost:3000';
+
+    async function fetchQuarters() {
+      const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+      if (!ticker) {
+        document.getElementById('message').textContent = 'Please enter a ticker.';
+        return;
+      }
+      document.getElementById('message').textContent = '';
+      try {
+        const res = await fetch(`${API_BASE}/filtered-financials?company=${ticker}`);
+        if (!res.ok) throw new Error(res.statusText);
+        data = await res.json();
+        if (!data.length) {
+          document.getElementById('message').textContent = 'No data found for ' + ticker;
+        }
+        populateYears();
+      } catch (e) {
+        document.getElementById('message').textContent = 'Fetch error: ' + e.message;
+      }
+    }
+
+    function populateYears() {
+      const sel = document.getElementById('yearSelect');
+      sel.innerHTML = '';
+      const years = [...new Set(data.map(d => d.calendar_year))].sort((a, b) => b - a);
+      years.forEach(year => {
+        const opt = document.createElement('option');
+        opt.value = year;
+        opt.textContent = year;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', renderYear);
+      if (years.length) {
+        sel.value = years[0];
+        renderYear();
+      }
+    }
+
+    function renderYear() {
+      const sel = document.getElementById('yearSelect');
+      const year = sel.value;
+      const container = document.getElementById('results');
+      container.innerHTML = '';
+      const quarters = data
+        .filter(d => String(d.calendar_year) === String(year))
+        .sort((a, b) => ['Q4','Q3','Q2','Q1'].indexOf(a.period) - ['Q4','Q3','Q2','Q1'].indexOf(b.period));
+
+      let totals = { revenue: 0, cogs: 0, grossprofit: 0, sga: 0, rnd: 0, da: 0, capex: 0, wc: 0 };
+
+      quarters.forEach(q => {
+        totals.revenue += Number(q.revenue);
+        totals.cogs += Number(q.cogs);
+        totals.grossprofit += Number(q.grossprofit);
+        totals.sga += Number(q.sga);
+        totals.rnd += Number(q.rnd);
+        totals.da += Number(q.da);
+        totals.capex += Number(q.capex);
+        totals.wc += Number(q.wc);
+
+        const div = document.createElement('div');
+        div.className = 'quarter';
+        div.innerHTML = `
+          <h2>${year} - ${q.period}</h2>
+          <ul>
+            <li>Revenue: ${Number(q.revenue).toLocaleString()}</li>
+            <li>COGS: ${Number(q.cogs).toLocaleString()}</li>
+            <li>Gross Profit: ${Number(q.grossprofit).toLocaleString()}</li>
+            <li>SG&A: ${Number(q.sga).toLocaleString()}</li>
+            <li>R&D: ${Number(q.rnd).toLocaleString()}</li>
+            <li>D&A: ${Number(q.da).toLocaleString()}</li>
+            <li>CapEx: ${Number(q.capex).toLocaleString()}</li>
+            <li>Δ Working Capital: ${Number(q.wc).toLocaleString()}</li>
+          </ul>
+        `;
+        container.appendChild(div);
+      });
+
+      const totDiv = document.createElement('div');
+      totDiv.className = 'totals';
+      totDiv.innerHTML = `
+        <h2>${year} Totals</h2>
+        <ul>
+          <li>Total Revenue: ${totals.revenue.toLocaleString()}</li>
+          <li>Total COGS: ${totals.cogs.toLocaleString()}</li>
+          <li>Total Gross Profit: ${totals.grossprofit.toLocaleString()}</li>
+          <li>Total SG&A: ${totals.sga.toLocaleString()}</li>
+          <li>Total R&D: ${totals.rnd.toLocaleString()}</li>
+          <li>Total D&A: ${totals.da.toLocaleString()}</li>
+          <li>Total CapEx: ${totals.capex.toLocaleString()}</li>
+          <li>Total Δ Working Capital: ${totals.wc.toLocaleString()}</li>
+        </ul>
+      `;
+      container.appendChild(totDiv);
+    }
+
+    document.getElementById('goButton').addEventListener('click', fetchQuarters);
+    document.addEventListener('DOMContentLoaded', fetchQuarters);
+  </script>
+</body>
+</html>
