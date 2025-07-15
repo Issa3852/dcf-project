@@ -126,7 +126,7 @@
       const sga = [...rows[3].querySelectorAll('td')].slice(1);
       const rnd = [...rows[4].querySelectorAll('td')].slice(1);
       const ebit = [...rows[5].querySelectorAll('td')].slice(1);
-      const taxrate = [...rows[6].querySelectorAll('td')].slice(1);
+      const tax = [...rows[6].querySelectorAll('td')].slice(1);
       const da = [...rows[7].querySelectorAll('td')].slice(1);
       const capex = [...rows[8].querySelectorAll('td')].slice(1);
       const wc = [...rows[9].querySelectorAll('td')].slice(1);
@@ -139,9 +139,7 @@
         const ebitVal = gpVal - parseNumber(sga[i].innerText) - parseNumber(rnd[i].innerText);
         ebit[i].innerText = formatNumber(ebitVal);
 
-        const tax = ebitVal * (parseNumber(taxrate[i].innerText) / 100);
-        const nopat = ebitVal - tax;
-
+        const nopat = ebitVal - parseNumber(tax[i].innerText);
         const fcffVal = nopat + parseNumber(da[i].innerText) + parseNumber(capex[i].innerText) - parseNumber(wc[i].innerText);
         fcff[i].innerText = formatNumber(fcffVal);
       }
@@ -157,23 +155,23 @@
         data.forEach(row => {
           const y = row.calendar_year;
           if (!grouped[y]) grouped[y] = { revenue: 0, cogs: 0, sga: 0, rnd: 0, da: 0, capex: 0, wc: 0, tax: 0 };
-          grouped[y].revenue += Number(row.revenue || 0);
-          grouped[y].cogs += Number(row.cogs || 0);
-          grouped[y].sga += Number(row.sga || 0);
-          grouped[y].rnd += Number(row.rnd || 0);
-          grouped[y].da += Number(row.da || 0);
-          grouped[y].capex += Number(row.capex || 0);
-          grouped[y].wc += Number(row.wc || 0);
-          grouped[y].tax += Number(row.tax || 0);
+          grouped[y].revenue += Number(row.revenue || 0) / 1e6;
+          grouped[y].cogs += Number(row.cogs || 0) / 1e6;
+          grouped[y].sga += Number(row.sga || 0) / 1e6;
+          grouped[y].rnd += Number(row.rnd || 0) / 1e6;
+          grouped[y].da += Number(row.da || 0) / 1e6;
+          grouped[y].capex += Number(row.capex || 0) / 1e6;
+          grouped[y].wc += Number(row.wc || 0) / 1e6;
+          grouped[y].tax += Number(row.tax || 0) / 1e6;
         });
 
         const years = [2020, 2021, 2022, 2023, 2024];
-        const metrics = ['Revenue', 'COGS', 'Gross Profit', 'SG&A', 'R&D', 'Operating Income (EBIT)', 'Tax Rate (%)', 'D&A', 'CapEx', 'Δ Working Capital', 'FCFF'];
+        const metrics = ['Revenue', 'COGS', 'Gross Profit', 'SG&A', 'R&D', 'Operating Income (EBIT)', 'Income Tax', 'D&A', 'CapEx', 'Δ Working Capital', 'FCFF'];
 
         const tbody = document.querySelector('#dcfTable tbody');
         tbody.innerHTML = '';
 
-        metrics.forEach((metric, idx) => {
+        metrics.forEach((metric, rowIndex) => {
           const row = document.createElement('tr');
           if (['Gross Profit', 'Operating Income (EBIT)', 'FCFF'].includes(metric)) row.classList.add('bold-row');
 
@@ -183,18 +181,26 @@
 
           years.forEach(y => {
             const td = document.createElement('td');
-            let val = '';
+            let val = '-';
             if (grouped[y]) {
               const g = grouped[y];
-              if (metric === 'Revenue') val = g.revenue;
-              else if (metric === 'COGS') val = g.cogs;
-              else if (metric === 'SG&A') val = g.sga;
-              else if (metric === 'R&D') val = g.rnd;
-              else if (metric === 'D&A') val = g.da;
-              else if (metric === 'CapEx') val = g.capex;
-              else if (metric === 'Δ Working Capital') val = g.wc;
-              else if (metric === 'Tax Rate (%)') val = 16.0;
-              else val = '-';
+              switch (metric) {
+                case 'Revenue': val = g.revenue; break;
+                case 'COGS': val = g.cogs; break;
+                case 'Gross Profit': val = g.revenue - g.cogs; break;
+                case 'SG&A': val = g.sga; break;
+                case 'R&D': val = g.rnd; break;
+                case 'Operating Income (EBIT)': val = g.revenue - g.cogs - g.sga - g.rnd; break;
+                case 'Income Tax': val = g.tax; break;
+                case 'D&A': val = g.da; break;
+                case 'CapEx': val = g.capex; break;
+                case 'Δ Working Capital': val = g.wc; break;
+                case 'FCFF':
+                  const ebit = g.revenue - g.cogs - g.sga - g.rnd;
+                  const nopat = ebit - g.tax;
+                  val = nopat + g.da + g.capex - g.wc;
+                  break;
+              }
             }
             td.innerText = typeof val === 'number' ? formatNumber(val) : val;
             row.appendChild(td);
@@ -204,8 +210,14 @@
             const td = document.createElement('td');
             td.classList.add('projection');
             if (!['Gross Profit', 'Operating Income (EBIT)', 'FCFF'].includes(metric)) td.contentEditable = true;
-            if (metric === 'Tax Rate (%)') td.innerText = '16.0';
-            else td.innerText = '-';
+            td.innerText = '-';
+            td.addEventListener('input', updateDCF);
+            td.addEventListener('keydown', e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                updateDCF();
+              }
+            });
             row.appendChild(td);
           }
 
