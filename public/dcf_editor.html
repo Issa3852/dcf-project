@@ -77,6 +77,9 @@
     .psi-link:hover {
       background: #e1e3e7;
     }
+    canvas {
+      margin-top: 40px;
+    }
   </style>
 </head>
 
@@ -107,6 +110,9 @@
     </table>
   </div>
 
+  <canvas id="financialChart" width="1200" height="400"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     function parseNumber(str) {
       return parseFloat(str.replace(/,/g, '')) || 0;
@@ -171,6 +177,8 @@
         const tbody = document.querySelector('#dcfTable tbody');
         tbody.innerHTML = '';
 
+        const chartData = { labels: years.map(String), revenue: [], ebit: [], fcff: [] };
+
         metrics.forEach((metric, rowIndex) => {
           const row = document.createElement('tr');
           if (['Gross Profit', 'Operating Income (EBIT)', 'FCFF'].includes(metric)) row.classList.add('bold-row');
@@ -185,12 +193,12 @@
             if (grouped[y]) {
               const g = grouped[y];
               switch (metric) {
-                case 'Revenue': val = g.revenue; break;
+                case 'Revenue': val = g.revenue; chartData.revenue.push(val); break;
                 case 'COGS': val = g.cogs; break;
                 case 'Gross Profit': val = g.revenue - g.cogs; break;
                 case 'SG&A': val = g.sga; break;
                 case 'R&D': val = g.rnd; break;
-                case 'Operating Income (EBIT)': val = g.revenue - g.cogs - g.sga - g.rnd; break;
+                case 'Operating Income (EBIT)': val = g.revenue - g.cogs - g.sga - g.rnd; chartData.ebit.push(val); break;
                 case 'Income Tax': val = g.tax; break;
                 case 'D&A': val = g.da; break;
                 case 'CapEx': val = g.capex; break;
@@ -199,6 +207,7 @@
                   const ebit = g.revenue - g.cogs - g.sga - g.rnd;
                   const nopat = ebit - g.tax;
                   val = nopat + g.da + g.capex - g.wc;
+                  chartData.fcff.push(val);
                   break;
               }
             }
@@ -224,10 +233,38 @@
           tbody.appendChild(row);
         });
 
+        renderChart(chartData);
         updateDCF();
       } catch (e) {
         console.error('Error fetching financials:', e);
       }
+    }
+
+    function renderChart(data) {
+      new Chart(document.getElementById('financialChart').getContext('2d'), {
+        type: 'line',
+        data: {
+          labels: data.labels,
+          datasets: [
+            { label: 'Revenue', data: data.revenue, borderWidth: 2, fill: false },
+            { label: 'EBIT', data: data.ebit, borderWidth: 2, fill: false },
+            { label: 'FCFF', data: data.fcff, borderWidth: 2, fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            title: { display: true, text: 'Historical Revenue, EBIT, and FCFF' }
+          },
+          scales: {
+            y: {
+              title: { display: true, text: 'Millions USD' },
+              beginAtZero: true
+            }
+          }
+        }
+      });
     }
 
     populateHistoricalData();
