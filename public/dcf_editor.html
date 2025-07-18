@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8" />
   <title>DCF – 5y Historical + 5y Projections (Dynamic FCFF)</title>
@@ -15,6 +14,15 @@
       font-size: 28px;
       margin-bottom: 10px;
       color: #333;
+    }
+    .controls {
+      margin-bottom: 20px;
+    }
+    .controls label,
+    .controls select,
+    .controls button {
+      font-size: 16px;
+      margin-right: 10px;
     }
     .table-container {
       background-color: #fff;
@@ -80,12 +88,67 @@
     canvas {
       margin-top: 40px;
     }
+    /* Drawer panel */
+    #drawer {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      height: 100%;
+      background: #fff;
+      box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+      transition: right 0.3s ease;
+      z-index: 1001;
+      overflow: hidden;
+    }
+    #drawer.open {
+      right: 0;
+    }
+    #drawer .close-btn {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      font-size: 24px;
+      cursor: pointer;
+    }
+    #drawer iframe {
+      position: absolute;
+      top: 48px;
+      left: 0;
+      width: 100%;
+      height: calc(100% - 48px);
+      border: none;
+    }
+    #toggleDrawer {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 1002;
+      padding: 8px 12px;
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
   </style>
 </head>
-
 <body>
+  <button id="toggleDrawer">Show raw data</button>
+  <div id="drawer">
+    <span class="close-btn">&times;</span>
+    <iframe src="calculations.html"></iframe>
+  </div>
+
   <a href="home.html" class="psi-link">Ψ</a>
-  <h1>DCF Valuation — AAPL</h1>
+
+  <div class="controls">
+    <label for="tickerSelect">Ticker:</label>
+    <select id="tickerSelect"></select>
+    <button id="refreshButton">Refresh</button>
+  </div>
+
+  <h1 id="mainTitle">DCF Valuation — AAPL</h1>
 
   <div class="table-container">
     <table id="dcfTable">
@@ -104,9 +167,7 @@
           <th class="projection">2029</th>
         </tr>
       </thead>
-      <tbody>
-        <!-- rows will be filled dynamically -->
-      </tbody>
+      <tbody></tbody>
     </table>
   </div>
 
@@ -114,6 +175,10 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    const API_BASE = 'http://localhost:3000';
+    const PROJ_GROWTH = 0.05;
+    let financialChart;
+
     function parseNumber(str) {
       return parseFloat(str.replace(/,/g, '')) || 0;
     }
@@ -122,93 +187,158 @@
       return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
     }
 
-    function updateDCF() {
-      const table = document.getElementById('dcfTable');
-      const rows = table.querySelectorAll('tbody tr');
+    function updateChartFromTable() {
+      const rows = document.querySelectorAll('#dcfTable tbody tr');
+      const projCount = 5;
+      const total = financialChart.data.labels.length;
+      const getProj = idx =>
+        Array.from(rows[idx].cells).slice(-projCount).map(td => parseNumber(td.innerText));
 
-      const rev = [...rows[0].querySelectorAll('td')].slice(1);
-      const cogs = [...rows[1].querySelectorAll('td')].slice(1);
-      const gp = [...rows[2].querySelectorAll('td')].slice(1);
-      const sga = [...rows[3].querySelectorAll('td')].slice(1);
-      const rnd = [...rows[4].querySelectorAll('td')].slice(1);
-      const ebit = [...rows[5].querySelectorAll('td')].slice(1);
-      const tax = [...rows[6].querySelectorAll('td')].slice(1);
-      const da = [...rows[7].querySelectorAll('td')].slice(1);
-      const capex = [...rows[8].querySelectorAll('td')].slice(1);
-      const wc = [...rows[9].querySelectorAll('td')].slice(1);
-      const fcff = [...rows[10].querySelectorAll('td')].slice(1);
+      const revProjRaw  = getProj(0);
+      const ebitProjRaw = getProj(5);
+      const fcfProjRaw  = getProj(10);
+
+      const hist2024Rev  = financialChart.data.datasets[0].data.slice(-1)[0];
+      const hist2024Ebit = financialChart.data.datasets[1].data.slice(-1)[0];
+      const hist2024Fcf  = financialChart.data.datasets[2].data.slice(-1)[0];
+
+      const revFull   = [hist2024Rev,  ...revProjRaw];
+      const ebitFull  = [hist2024Ebit, ...ebitProjRaw];
+      const fcfFull   = [hist2024Fcf,  ...fcfProjRaw];
+
+      const padCount = total - revFull.length;
+      const pad = cnt => Array(cnt).fill(null);
+
+      financialChart.data.datasets[3].data = pad(padCount).concat(revFull);
+      financialChart.data.datasets[4].data = pad(padCount).concat(ebitFull);
+      financialChart.data.datasets[5].data = pad(padCount).concat(fcfFull);
+      financialChart.update();
+    }
+
+    function updateDCF() {
+      const rows = document.querySelectorAll('#dcfTable tbody tr');
+      const rev   = Array.from(rows[0].cells).slice(1);
+      const cogs  = Array.from(rows[1].cells).slice(1);
+      const gp    = Array.from(rows[2].cells).slice(1);
+      const sga   = Array.from(rows[3].cells).slice(1);
+      const rnd   = Array.from(rows[4].cells).slice(1);
+      const ebit  = Array.from(rows[5].cells).slice(1);
+      const tax   = Array.from(rows[6].cells).slice(1);
+      const da    = Array.from(rows[7].cells).slice(1);
+      const capex = Array.from(rows[8].cells).slice(1);
+      const wc    = Array.from(rows[9].cells).slice(1);
+      const fcff  = Array.from(rows[10].cells).slice(1);
 
       for (let i = 0; i < rev.length; i++) {
-        const gpVal = parseNumber(rev[i].innerText) - parseNumber(cogs[i].innerText);
+        const gpVal    = parseNumber(rev[i].innerText) - parseNumber(cogs[i].innerText);
         gp[i].innerText = formatNumber(gpVal);
 
-        const ebitVal = gpVal - parseNumber(sga[i].innerText) - parseNumber(rnd[i].innerText);
+        const ebitVal  = gpVal - parseNumber(sga[i].innerText) - parseNumber(rnd[i].innerText);
         ebit[i].innerText = formatNumber(ebitVal);
 
-        const nopat = ebitVal - parseNumber(tax[i].innerText);
+        const nopat   = ebitVal - parseNumber(tax[i].innerText);
         const fcffVal = nopat + parseNumber(da[i].innerText) + parseNumber(capex[i].innerText) - parseNumber(wc[i].innerText);
         fcff[i].innerText = formatNumber(fcffVal);
       }
+
+      updateChartFromTable();
     }
 
-    async function populateHistoricalData() {
+    async function renderChart(data) {
+      const ctx = document.getElementById('financialChart').getContext('2d');
+      if (financialChart) financialChart.destroy();
+      financialChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [...data.labels, '2025','2026','2027','2028','2029'],
+          datasets: [
+            { label: 'Revenue (Historical)', data: data.revenue, borderColor: '#007bff',  borderWidth: 2, fill: false },
+            { label: 'EBIT (Historical)',    data: data.ebit,    borderColor: '#28a745', borderWidth: 2, fill: false },
+            { label: 'FCFF (Historical)',    data: data.fcff,    borderColor: '#ffc107', borderWidth: 2, fill: false },
+            { label: 'Revenue (Projected)',  data: [],           borderColor: '#007bff', borderDash: [5,5], borderWidth: 2, fill: false },
+            { label: 'EBIT (Projected)',     data: [],           borderColor: '#28a745', borderDash: [5,5], borderWidth: 2, fill: false },
+            { label: 'FCFF (Projected)',     data: [],           borderColor: '#ffc107', borderDash: [5,5], borderWidth: 2, fill: false }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            title: { display: true, text: 'Historical + Projected Financials' }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: 'Millions USD' }
+            }
+          }
+        }
+      });
+    }
+
+    async function populateHistoricalData(ticker) {
       try {
-        const res = await fetch('http://localhost:3000/filtered-financials?company=AAPL');
+        const res = await fetch(`${API_BASE}/filtered-financials?company=${ticker}`);
         if (!res.ok) throw new Error(res.statusText);
-        const data = await res.json();
+        const raw = await res.json();
 
         const grouped = {};
-        data.forEach(row => {
+        raw.forEach(row => {
           const y = row.calendar_year;
-          if (!grouped[y]) grouped[y] = { revenue: 0, cogs: 0, sga: 0, rnd: 0, da: 0, capex: 0, wc: 0, tax: 0 };
-          grouped[y].revenue += Number(row.revenue || 0) / 1e6;
-          grouped[y].cogs += Number(row.cogs || 0) / 1e6;
-          grouped[y].sga += Number(row.sga || 0) / 1e6;
-          grouped[y].rnd += Number(row.rnd || 0) / 1e6;
-          grouped[y].da += Number(row.da || 0) / 1e6;
-          grouped[y].capex += Number(row.capex || 0) / 1e6;
-          grouped[y].wc += Number(row.wc || 0) / 1e6;
-          grouped[y].tax += Number(row.tax || 0) / 1e6;
+          if (!grouped[y]) grouped[y] = { revenue:0,cogs:0,sga:0,rnd:0,da:0,capex:0,wc:0,tax:0 };
+          grouped[y].revenue += (row.revenue||0)/1e6;
+          grouped[y].cogs     += (row.cogs   ||0)/1e6;
+          grouped[y].sga      += (row.sga    ||0)/1e6;
+          grouped[y].rnd      += (row.rnd    ||0)/1e6;
+          grouped[y].da       += (row.da     ||0)/1e6;
+          grouped[y].capex    += (row.capex  ||0)/1e6;
+          grouped[y].wc       += (row.wc     ||0)/1e6;
+          grouped[y].tax      += (row.tax    ||0)/1e6;
         });
 
-        const years = [2020, 2021, 2022, 2023, 2024];
-        const metrics = ['Revenue', 'COGS', 'Gross Profit', 'SG&A', 'R&D', 'Operating Income (EBIT)', 'Income Tax', 'D&A', 'CapEx', 'Δ Working Capital', 'FCFF'];
-
-        const tbody = document.querySelector('#dcfTable tbody');
+        const years   = [2020,2021,2022,2023,2024];
+        const lastYear = years[years.length-1];
+        const keyMap   = {
+          'Revenue':'revenue','COGS':'cogs','SG&A':'sga','R&D':'rnd',
+          'Income Tax':'tax','D&A':'da','CapEx':'capex','Δ Working Capital':'wc'
+        };
+        const metrics = ['Revenue','COGS','Gross Profit','SG&A','R&D','Operating Income (EBIT)','Income Tax','D&A','CapEx','Δ Working Capital','FCFF'];
+        const tbody   = document.querySelector('#dcfTable tbody');
         tbody.innerHTML = '';
+        const chartData = { labels: years.map(String), revenue:[], ebit:[], fcff:[] };
 
-        const chartData = { labels: years.map(String), revenue: [], ebit: [], fcff: [] };
-
-        metrics.forEach((metric, rowIndex) => {
+        metrics.forEach(metric => {
           const row = document.createElement('tr');
-          if (['Gross Profit', 'Operating Income (EBIT)', 'FCFF'].includes(metric)) row.classList.add('bold-row');
+          if (['Gross Profit','Operating Income (EBIT)','FCFF'].includes(metric)) row.classList.add('bold-row');
 
-          const label = document.createElement('td');
-          label.innerText = metric;
-          row.appendChild(label);
+          const labelCell = document.createElement('td');
+          labelCell.innerText = metric;
+          row.appendChild(labelCell);
 
           years.forEach(y => {
             const td = document.createElement('td');
             let val = '-';
             if (grouped[y]) {
               const g = grouped[y];
-              switch (metric) {
-                case 'Revenue': val = g.revenue; chartData.revenue.push(val); break;
-                case 'COGS': val = g.cogs; break;
-                case 'Gross Profit': val = g.revenue - g.cogs; break;
-                case 'SG&A': val = g.sga; break;
-                case 'R&D': val = g.rnd; break;
-                case 'Operating Income (EBIT)': val = g.revenue - g.cogs - g.sga - g.rnd; chartData.ebit.push(val); break;
-                case 'Income Tax': val = g.tax; break;
-                case 'D&A': val = g.da; break;
-                case 'CapEx': val = g.capex; break;
-                case 'Δ Working Capital': val = g.wc; break;
-                case 'FCFF':
-                  const ebit = g.revenue - g.cogs - g.sga - g.rnd;
-                  const nopat = ebit - g.tax;
-                  val = nopat + g.da + g.capex - g.wc;
+              switch(metric) {
+                case 'Revenue':    val = g.revenue;    chartData.revenue.push(val); break;
+                case 'COGS':       val = g.cogs;                          break;
+                case 'Gross Profit': val = g.revenue-g.cogs;             break;
+                case 'SG&A':       val = g.sga;                           break;
+                case 'R&D':        val = g.rnd;                           break;
+                case 'Operating Income (EBIT)': 
+                  val = g.revenue-g.cogs-g.sga-g.rnd; chartData.ebit.push(val); break;
+                case 'Income Tax': val = g.tax;                           break;
+                case 'D&A':        val = g.da;                            break;
+                case 'CapEx':      val = g.capex;                         break;
+                case 'Δ Working Capital': val = g.wc;                    break;
+                case 'FCFF': {
+                  const e = g.revenue-g.cogs-g.sga-g.rnd;
+                  const np = e - g.tax;
+                  val = np + g.da + g.capex - g.wc;
                   chartData.fcff.push(val);
                   break;
+                }
               }
             }
             td.innerText = typeof val === 'number' ? formatNumber(val) : val;
@@ -218,56 +348,66 @@
           for (let i = 0; i < 5; i++) {
             const td = document.createElement('td');
             td.classList.add('projection');
-            if (!['Gross Profit', 'Operating Income (EBIT)', 'FCFF'].includes(metric)) td.contentEditable = true;
-            td.innerText = '-';
-            td.addEventListener('input', updateDCF);
-            td.addEventListener('keydown', e => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                updateDCF();
-              }
-            });
+            if (keyMap[metric]) {
+              td.contentEditable = true;
+              const baseVal = grouped[lastYear] ? grouped[lastYear][keyMap[metric]] : 0;
+              const projVal = baseVal * Math.pow(1 + PROJ_GROWTH, i + 1);
+              td.innerText = formatNumber(projVal);
+              td.addEventListener('input', updateDCF);
+              td.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); updateDCF(); }
+              });
+            } else {
+              td.innerText = '-';
+            }
             row.appendChild(td);
           }
 
           tbody.appendChild(row);
         });
 
-        renderChart(chartData);
+        await renderChart(chartData);
         updateDCF();
       } catch (e) {
         console.error('Error fetching financials:', e);
       }
     }
 
-    function renderChart(data) {
-      new Chart(document.getElementById('financialChart').getContext('2d'), {
-        type: 'line',
-        data: {
-          labels: data.labels,
-          datasets: [
-            { label: 'Revenue', data: data.revenue, borderWidth: 2, fill: false },
-            { label: 'EBIT', data: data.ebit, borderWidth: 2, fill: false },
-            { label: 'FCFF', data: data.fcff, borderWidth: 2, fill: false }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { position: 'top' },
-            title: { display: true, text: 'Historical Revenue, EBIT, and FCFF' }
-          },
-          scales: {
-            y: {
-              title: { display: true, text: 'Millions USD' },
-              beginAtZero: true
-            }
-          }
+    document.addEventListener('DOMContentLoaded', async () => {
+      const tickerSelect = document.getElementById('tickerSelect');
+      const refreshBtn   = document.getElementById('refreshButton');
+      const mainTitle    = document.getElementById('mainTitle');
+      const drawer       = document.getElementById('drawer');
+      const toggleBtn    = document.getElementById('toggleDrawer');
+      const closeBtn     = drawer.querySelector('.close-btn');
+      const iframe       = drawer.querySelector('iframe');
+
+      try {
+        const res  = await fetch(`${API_BASE}/companies`);
+        const list = await res.json();
+        tickerSelect.innerHTML = list.map(t => `<option>${t}</option>`).join('');
+      } catch (e) {
+        console.error('Error loading tickers:', e);
+      }
+
+      async function loadTicker(t) {
+        mainTitle.innerText = `DCF Valuation — ${t}`;
+        iframe.src = `calculations.html?ticker=${t}`;
+        await populateHistoricalData(t);
+      }
+
+      await loadTicker(tickerSelect.value || 'AAPL');
+      tickerSelect.addEventListener('change', () => loadTicker(tickerSelect.value));
+      refreshBtn.addEventListener('click',   () => loadTicker(tickerSelect.value));
+
+      toggleBtn.addEventListener('click',   () => drawer.classList.add('open'));
+      closeBtn.addEventListener('click',    () => drawer.classList.remove('open'));
+      document.addEventListener('click', e => {
+        if (drawer.classList.contains('open') && !drawer.contains(e.target) && e.target !== toggleBtn) {
+          drawer.classList.remove('open');
         }
       });
-    }
-
-    populateHistoricalData();
+    });
   </script>
 </body>
 </html>
