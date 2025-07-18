@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DCF – 5y Historical + 5y Projections (Dynamic FCFF)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #0057ff;
+      --background: #f3f4f8;
+      --card-bg: #ffffffcc;
+      --card-glow: rgba(0, 0, 0, 0.05);
+      --text-dark: #111;
+      --text-subtle: #666;
+      --accent: #00c9a7;
+    }
+
+    body {
+      margin: 0;
+      padding: 40px;
+      font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
+      background: linear-gradient(to right, #f9fbfd, #eef2f7);
+      color: var(--text-dark);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .controls label {
+      font-size: 15px;
+      color: var(--text-subtle);
+    }
+
+    .controls select,
+    .controls button {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      background: white;
+      font-size: 15px;
+      transition: all 0.2s ease;
+    }
+
+    .controls button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+    }
+
+    .controls button:hover {
+      background-color: #0045cc;
+    }
+
+    .table-container {
+      margin-top: 30px;
+      border-radius: 16px;
+      overflow-x: auto;
+      background: var(--card-bg);
+      box-shadow: 0 8px 24px var(--card-glow);
+      backdrop-filter: blur(6px);
+      padding: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1000px;
+    }
+
+    th {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 12px;
+      background: #f0f2f7;
+      text-align: right;
+      border-bottom: 2px solid #ddd;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+      color: var(--text-subtle);
+    }
+
+    td {
+      padding: 12px;
+      font-size: 14px;
+      border-bottom: 1px solid #eee;
+      text-align: right;
+    }
+
+    .bold-row {
+      background: #fafbff;
+      font-weight: 600;
+    }
+
+    .projection {
+      background: #eaf4ff;
+      color: #003366;
+    }
+
+    td[contenteditable="true"] {
+      background-color: #fffbe7;
+      border: 1px solid #ccc;
+      cursor: text;
+    }
+
+    #financialChart {
+      margin-top: 50px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+    }
+
+    #toggleDrawer {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      z-index: 10;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    #drawer {
+      position: fixed;
+      top: 0;
+      right: -420px;
+      width: 400px;
+      height: 100%;
+      background: white;
+      border-left: 1px solid #ccc;
+      box-shadow: -2px 0 12px rgba(0,0,0,0.1);
+      transition: right 0.4s ease;
+      z-index: 1001;
+    }
+
+    #drawer.open {
+      right: 0;
+    }
+
+    #drawer .close-btn {
+      font-size: 20px;
+      padding: 10px;
+      cursor: pointer;
+      color: #888;
+    }
+
+    #drawer iframe {
+      width: 100%;
+      height: calc(100% - 40px);
+      border: none;
+    }
+
+    .psi-link {
+      position: fixed;
+      top: 16px;
+      left: 20px;
+      font-size: 24px;
+      font-weight: bold;
+      background: #e6f0ff;
+      color: var(--primary);
+      padding: 8px 10px;
+      border-radius: 6px;
+      text-decoration: none;
+      z-index: 1000;
+    }
+
+    .psi-link:hover {
+      background: #d0e4ff;
+    }
+  </style>
+</head>
+<body>
+  <button id="toggleDrawer">Show raw data</button>
+  <div id="drawer">
+    <span class="close-btn">&times;</span>
+    <iframe src="calculations.html"></iframe>
+  </div>
+
+  <a href="home.html" class="psi-link">Ψ</a>
+
+  <div class="controls">
+    <label for="tickerSelect">Ticker:</label>
+    <select id="tickerSelect"></select>
+    <button id="refreshButton">Refresh</button>
+  </div>
+
+  <h1 id="mainTitle">DCF Valuation — AAPL</h1>
+
+  <div class="table-container">
+    <table id="dcfTable">
+      <thead>
+        <tr>
+          <th>Metric (in millions $)</th>
+          <th>2020</th>
+          <th>2021</th>
+          <th>2022</th>
+          <th>2023</th>
+          <th>2024</th>
+          <th class="projection">2025</th>
+          <th class="projection">2026</th>
+          <th class="projection">2027</th>
+          <th class="projection">2028</th>
+          <th class="projection">2029</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <canvas id="financialChart" width="1200" height="400"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// JavaScript logic goes here (over 400 lines, including chart rendering, editable table handling, projections, API calls, and DOM manipulation)
+
+const API_BASE = 'http://localhost:3000';
+const PROJ_GROWTH = 0.05;
+let financialChart;
+
+function parseNumber(str) {
+  return parseFloat(str.replace(/,/g, '')) || 0;
+}
+
+function formatNumber(num) {
+  return num.toLocaleString('en-US', { maximumFractionDigits: 0 });
+}
+
+function updateChartFromTable() {
+  const rows = document.querySelectorAll('#dcfTable tbody tr');
+  const projCount = 5;
+  const total = financialChart.data.labels.length;
+  const getProj = idx => Array.from(rows[idx].cells).slice(-projCount).map(td => parseNumber(td.innerText));
+
+  const revProjRaw  = getProj(0);
+  const ebitProjRaw = getProj(5);
+  const fcfProjRaw  = getProj(10);
+
+  const hist2024Rev  = financialChart.data.datasets[0].data.slice(-1)[0];
+  const hist2024Ebit = financialChart.data.datasets[1].data.slice(-1)[0];
+  const hist2024Fcf  = financialChart.data.datasets[2].data.slice(-1)[0];
+
+  const revFull   = [hist2024Rev,  ...revProjRaw];
+  const ebitFull  = [hist2024Ebit, ...ebitProjRaw];
+  const fcfFull   = [hist2024Fcf,  ...fcfProjRaw];
+
+  const padCount = total - revFull.length;
+  const pad = cnt => Array(cnt).fill(null);
+
+  financialChart.data.datasets[3].data = pad(padCount).concat(revFull);
+  financialChart.data.datasets[4].data = pad(padCount).concat(ebitFull);
+  financialChart.data.datasets[5].data = pad(padCount).concat(fcfFull);
+  financialChart.update();
+}
+
+function updateDCF() {
+  const rows = document.querySelectorAll('#dcfTable tbody tr');
+  const rev   = Array.from(rows[0].cells).slice(1);
+  const cogs  = Array.from(rows[1].cells).slice(1);
+  const gp    = Array.from(rows[2].cells).slice(1);
+  const sga   = Array.from(rows[3].cells).slice(1);
+  const rnd   = Array.from(rows[4].cells).slice(1);
+  const ebit  = Array.from(rows[5].cells).slice(1);
+  const tax   = Array.from(rows[6].cells).slice(1);
+  const da    = Array.from(rows[7].cells).slice(1);
+  const capex = Array.from(rows[8].cells).slice(1);
+  const wc    = Array.from(rows[9].cells).slice(1);
+  const fcff  = Array.from(rows[10].cells).slice(1);
+
+  for (let i = 0; i < rev.length; i++) {
+    const gpVal    = parseNumber(rev[i].innerText) - parseNumber(cogs[i].innerText);
+    gp[i].innerText = formatNumber(gpVal);
+
+    const ebitVal  = gpVal - parseNumber(sga[i].innerText) - parseNumber(rnd[i].innerText);
+    ebit[i].innerText = formatNumber(ebitVal);
+
+    const nopat   = ebitVal - parseNumber(tax[i].innerText);
+    const fcffVal = nopat + parseNumber(da[i].innerText) + parseNumber(capex[i].innerText) - parseNumber(wc[i].innerText);
+    fcff[i].innerText = formatNumber(fcffVal);
+  }
+
+  updateChartFromTable();
+}
+
+async function renderChart(data) {
+  const ctx = document.getElementById('financialChart').getContext('2d');
+  if (financialChart) financialChart.destroy();
+
+  const gradient1 = ctx.createLinearGradient(0, 0, 0, 400);
+  gradient1.addColorStop(0, 'rgba(0, 87, 255, 0.4)');
+  gradient1.addColorStop(1, 'rgba(0, 87, 255, 0)');
+
+  const gradient2 = ctx.createLinearGradient(0, 0, 0, 400);
+  gradient2.addColorStop(0, 'rgba(40, 167, 69, 0.4)');
+  gradient2.addColorStop(1, 'rgba(40, 167, 69, 0)');
+
+  const gradient3 = ctx.createLinearGradient(0, 0, 0, 400);
+  gradient3.addColorStop(0, 'rgba(255, 193, 7, 0.4)');
+  gradient3.addColorStop(1, 'rgba(255, 193, 7, 0)');
+
+  financialChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: [...data.labels, '2025','2026','2027','2028','2029'],
+      datasets: [
+        { label: 'Revenue (Historical)', data: data.revenue, borderColor: '#007bff', backgroundColor: gradient1, fill: true, tension: 0.3 },
+        { label: 'EBIT (Historical)', data: data.ebit, borderColor: '#28a745', backgroundColor: gradient2, fill: true, tension: 0.3 },
+        { label: 'FCFF (Historical)', data: data.fcff, borderColor: '#ffc107', backgroundColor: gradient3, fill: true, tension: 0.3 },
+        { label: 'Revenue (Projected)', data: [], borderColor: '#007bff', borderDash: [5,5], fill: false, tension: 0.3 },
+        { label: 'EBIT (Projected)', data: [], borderColor: '#28a745', borderDash: [5,5], fill: false, tension: 0.3 },
+        { label: 'FCFF (Projected)', data: [], borderColor: '#ffc107', borderDash: [5,5], fill: false, tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        title: { display: true, text: 'Historical + Projected Financials' }
+      },
+      interaction: {
+        mode: 'nearest',
+        axis: 'x',
+        intersect: false
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Millions USD' }
+        },
+        x: {
+          title: { display: true, text: 'Fiscal Year' }
+        }
+      }
+    }
+  });
+}
+
+async function populateHistoricalData(ticker) {
+  try {
+    const res = await fetch(`${API_BASE}/filtered-financials?company=${ticker}`);
+    if (!res.ok) throw new Error(res.statusText);
+    const raw = await res.json();
+
+    const grouped = {};
+    raw.forEach(row => {
+      const y = row.calendar_year;
+      if (!grouped[y]) grouped[y] = { revenue:0,cogs:0,sga:0,rnd:0,da:0,capex:0,wc:0,tax:0 };
+      grouped[y].revenue += (row.revenue||0)/1e6;
+      grouped[y].cogs     += (row.cogs   ||0)/1e6;
+      grouped[y].sga      += (row.sga    ||0)/1e6;
+      grouped[y].rnd      += (row.rnd    ||0)/1e6;
+      grouped[y].da       += (row.da     ||0)/1e6;
+      grouped[y].capex    += (row.capex  ||0)/1e6;
+      grouped[y].wc       += (row.wc     ||0)/1e6;
+      grouped[y].tax      += (row.tax    ||0)/1e6;
+    });
+
+    const years   = [2020,2021,2022,2023,2024];
+    const lastYear = years[years.length-1];
+    const keyMap   = {
+      'Revenue':'revenue','COGS':'cogs','SG&A':'sga','R&D':'rnd','Income Tax':'tax','D&A':'da','CapEx':'capex','Δ Working Capital':'wc'
+    };
+    const metrics = ['Revenue','COGS','Gross Profit','SG&A','R&D','Operating Income (EBIT)','Income Tax','D&A','CapEx','Δ Working Capital','FCFF'];
+    const tbody   = document.querySelector('#dcfTable tbody');
+    tbody.innerHTML = '';
+    const chartData = { labels: years.map(String), revenue:[], ebit:[], fcff:[] };
+
+    metrics.forEach(metric => {
+      const row = document.createElement('tr');
+      if (['Gross Profit','Operating Income (EBIT)','FCFF'].includes(metric)) row.classList.add('bold-row');
+
+      const labelCell = document.createElement('td');
+      labelCell.innerText = metric;
+      row.appendChild(labelCell);
+
+      years.forEach(y => {
+        const td = document.createElement('td');
+        let val = '-';
+        if (grouped[y]) {
+          const g = grouped[y];
+          switch(metric) {
+            case 'Revenue':    val = g.revenue;    chartData.revenue.push(val); break;
+            case 'COGS':       val = g.cogs; break;
+            case 'Gross Profit': val = g.revenue-g.cogs; break;
+            case 'SG&A':       val = g.sga; break;
+            case 'R&D':        val = g.rnd; break;
+            case 'Operating Income (EBIT)': val = g.revenue-g.cogs-g.sga-g.rnd; chartData.ebit.push(val); break;
+            case 'Income Tax': val = g.tax; break;
+            case 'D&A':        val = g.da; break;
+            case 'CapEx':      val = g.capex; break;
+            case 'Δ Working Capital': val = g.wc; break;
+            case 'FCFF': const e = g.revenue-g.cogs-g.sga-g.rnd; const np = e - g.tax; val = np + g.da + g.capex - g.wc; chartData.fcff.push(val); break;
+          }
+        }
+        td.innerText = typeof val === 'number' ? formatNumber(val) : val;
+        row.appendChild(td);
+      });
+
+      for (let i = 0; i < 5; i++) {
+        const td = document.createElement('td');
+        td.classList.add('projection');
+        if (keyMap[metric]) {
+          td.contentEditable = true;
+          const baseVal = grouped[lastYear] ? grouped[lastYear][keyMap[metric]] : 0;
+          const projVal = baseVal * Math.pow(1 + PROJ_GROWTH, i + 1);
+          td.innerText = formatNumber(projVal);
+          td.addEventListener('input', updateDCF);
+          td.addEventListener('keydown', e => {
+            if (e.key === 'Enter') { e.preventDefault(); updateDCF(); }
+          });
+        } else {
+          td.innerText = '-';
+        }
+        row.appendChild(td);
+      }
+
+      tbody.appendChild(row);
+    });
+
+    await renderChart(chartData);
+    updateDCF();
+  } catch (e) {
+    console.error('Error fetching financials:', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const tickerSelect = document.getElementById('tickerSelect');
+  const refreshBtn   = document.getElementById('refreshButton');
+  const mainTitle    = document.getElementById('mainTitle');
+  const drawer       = document.getElementById('drawer');
+  const toggleBtn    = document.getElementById('toggleDrawer');
+  const closeBtn     = drawer.querySelector('.close-btn');
+  const iframe       = drawer.querySelector('iframe');
+
+  try {
+    const res  = await fetch(`${API_BASE}/companies`);
+    const list = await res.json();
+    tickerSelect.innerHTML = list.map(t => `<option>${t}</option>`).join('');
+  } catch (e) {
+    console.error('Error loading tickers:', e);
+  }
+
+  async function loadTicker(t) {
+    mainTitle.innerText = `DCF Valuation — ${t}`;
+    iframe.src = `calculations.html?ticker=${t}`;
+    await populateHistoricalData(t);
+  }
+
+  await loadTicker(tickerSelect.value || 'AAPL');
+  tickerSelect.addEventListener('change', () => loadTicker(tickerSelect.value));
+  refreshBtn.addEventListener('click',   () => loadTicker(tickerSelect.value));
+
+  toggleBtn.addEventListener('click',   () => drawer.classList.add('open'));
+  closeBtn.addEventListener('click',    () => drawer.classList.remove('open'));
+  document.addEventListener('click', e => {
+    if (drawer.classList.contains('open') && !drawer.contains(e.target) && e.target !== toggleBtn) {
+      drawer.classList.remove('open');
+    }
+  });
+});
+</script>
+</body>
+</html>

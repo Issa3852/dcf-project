@@ -126,18 +126,19 @@
       container.appendChild(totDiv);
     }
 
-    // wire up controls
     document.getElementById('goButton').addEventListener('click', fetchQuarters);
     document.addEventListener('DOMContentLoaded', () => {
-      // read ?ticker= param
-      const params = new URLSearchParams(window.location.search);
-      const preset = params.get('ticker');
-      if (preset) {
-        document.getElementById('tickerInput').value = preset.toUpperCase();
-      }
-      // initial fetch
-      fetchQuarters();
-    });
+  // 1) read any ?ticker=XXX from the iframe URL
+  const params       = new URLSearchParams(window.location.search);
+  const presetTicker = params.get('ticker');
+  // 2) if we got one, override the default input value
+  if (presetTicker) {
+    document.getElementById('tickerInput').value = presetTicker.toUpperCase();
+  }
+  // 3) now go fetch and render
+  fetchQuarters();
+});
+
   </script>
 </body>
 </html>
