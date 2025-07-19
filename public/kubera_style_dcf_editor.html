@@ -1,101 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Kubera-style - DCF Projections</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #0057ff;
-      --background: #f3f4f8;
-      --card-bg: #ffffffcc;
-      --card-glow: rgba(0, 0, 0, 0.05);
-      --text-dark: #111;
-      --text-subtle: #666;
-      --accent: #00c9a7;
-    }
-
-    body {
-      margin: 0;
-      padding: 40px;
-      font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
-      background: linear-gradient(to right, #f9fbfd, #eef2f7);
-      color: var(--text-dark);
-      margin-left: 220px; /* Add margin for sidebar */
-    }
-
-    .sidebar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 200px;
-      height: 100vh;
-      background: #fff;
-      box-shadow: 2px 0 6px rgba(0,0,0,0.08);
-      padding: 24px 16px;
-      font-family: 'Inter', sans-serif;
-      z-index: 1000;
-    }
-
-    .sidebar-header {
-      font-size: 20px;
-      font-weight: 600;
-      margin-bottom: 32px;
-      color: var(--primary);
-    }
-
-    .sidebar-nav {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .sidebar-nav li {
-      margin-bottom: 16px;
-    }
-
-    .sidebar-nav a {
-      text-decoration: none;
-      color: var(--text-dark);
-      font-size: 15px;
-      display: block;
-      padding: 8px 12px;
-      border-radius: 6px;
-      transition: background 0.2s ease;
-    }
-
-    .sidebar-nav a:hover {
-      background: #f0f4ff;
-      color: var(--primary);
-    }
-
-    .sidebar-nav a.active {
-      background: #e8f0ff;
-      color: var(--primary);
-      font-weight: 600;
-    }
-  </style>
-</head>
-<body>
-  <div class="sidebar">
-    <div class="sidebar-header">KUBERA</div>
-    <ul class="sidebar-nav">
-      <li><a href="dcf.html" class="active">📊 DCF</a></li>
-      <li><a href="wacc.html">🧮 WACC</a></li>
-      <li><a href="summary.html">📋 Summary</a></li>
-    </ul>
-  </div>
-
-  <!-- Rest of the existing body content remains unchanged -->
-  {{BODY_REMAINS_UNCHANGED}}
-</body>
-</html>
-<!DOCTYPE html>
-<html lang="en">
 
 <head>
   <meta charset="UTF-8" />
   <title>DCF Valuation – Kubera Style</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -279,6 +188,7 @@
     <h2>VALTUO</h2>
     <a class="nav-link" href="#">Valuation Summary</a>
     <a class="nav-link" href="#">DCF <span>$XX,XXX</span></a>
+    <a class="nav-link" href="WACC.html" style="margin-left: 10px; font-size: 15px;">↳ WACC</a>
     <a class="nav-link" href="#">Public Comps <span>$XX,XXX</span></a>
     <a class="nav-link" href="#">Private Comps <span>$XX,XXX</span></a>
     <a class="nav-link" href="#">Fast Forward</a>
