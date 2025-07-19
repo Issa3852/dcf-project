@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>DCF – 5y Historical + 5y Projections (Dynamic FCFF)</title>
+  <title>Kubera-style - DCF Projections</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -21,137 +21,204 @@
       font-family: 'Inter', 'Segoe UI', Tahoma, sans-serif;
       background: linear-gradient(to right, #f9fbfd, #eef2f7);
       color: var(--text-dark);
+      margin-left: 220px; /* Add margin for sidebar */
     }
 
-    h1 {
-      font-size: 32px;
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 200px;
+      height: 100vh;
+      background: #fff;
+      box-shadow: 2px 0 6px rgba(0,0,0,0.08);
+      padding: 24px 16px;
+      font-family: 'Inter', sans-serif;
+      z-index: 1000;
+    }
+
+    .sidebar-header {
+      font-size: 20px;
       font-weight: 600;
-      margin-bottom: 24px;
+      margin-bottom: 32px;
+      color: var(--primary);
     }
 
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 24px;
+    .sidebar-nav {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
 
-    .controls label {
+    .sidebar-nav li {
+      margin-bottom: 16px;
+    }
+
+    .sidebar-nav a {
+      text-decoration: none;
+      color: var(--text-dark);
       font-size: 15px;
-      color: var(--text-subtle);
-    }
-
-    .controls select,
-    .controls button {
-      padding: 8px 14px;
+      display: block;
+      padding: 8px 12px;
       border-radius: 6px;
-      border: 1px solid #ccc;
-      background: white;
-      font-size: 15px;
-      transition: all 0.2s ease;
+      transition: background 0.2s ease;
     }
 
-    .controls button {
-      background-color: var(--primary);
-      color: white;
-      border: none;
+    .sidebar-nav a:hover {
+      background: #f0f4ff;
+      color: var(--primary);
     }
 
-    .controls button:hover {
-      background-color: #0045cc;
+    .sidebar-nav a.active {
+      background: #e8f0ff;
+      color: var(--primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="sidebar-header">KUBERA</div>
+    <ul class="sidebar-nav">
+      <li><a href="dcf.html" class="active">📊 DCF</a></li>
+      <li><a href="wacc.html">🧮 WACC</a></li>
+      <li><a href="summary.html">📋 Summary</a></li>
+    </ul>
+  </div>
+
+  <!-- Rest of the existing body content remains unchanged -->
+  {{BODY_REMAINS_UNCHANGED}}
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>DCF Valuation – Kubera Style</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #f8f9fc;
+      color: #333;
+      display: flex;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 220px;
+      background-color: #f2f3f5;
+      padding: 30px 20px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #ddd;
+    }
+
+    .sidebar h2 {
+      font-size: 28px;
+      margin-bottom: 30px;
+      font-weight: bold;
+      letter-spacing: 0.5px;
+    }
+
+    .nav-link {
+      margin-bottom: 18px;
+      font-size: 16px;
+      color: #333;
+      text-decoration: none;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .nav-link:hover {
+      color: #007bff;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 40px;
+      overflow-y: auto;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .top-controls .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .top-controls label,
+    .top-controls select,
+    .top-controls button {
+      font-size: 16px;
+    }
+
+    .psi-link {
+      font-size: 24px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
     }
 
     .table-container {
-      margin-top: 30px;
-      border-radius: 16px;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
       overflow-x: auto;
-      background: var(--card-bg);
-      box-shadow: 0 8px 24px var(--card-glow);
-      backdrop-filter: blur(6px);
-      padding: 24px;
+      margin-top: 20px;
     }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 1000px;
+      min-width: 1200px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: right;
     }
 
     th {
-      font-size: 13px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 12px;
-      background: #f0f2f7;
-      text-align: right;
-      border-bottom: 2px solid #ddd;
-    }
-
-    th:first-child,
-    td:first-child {
-      text-align: left;
-      color: var(--text-subtle);
+      background-color: #f1f3f7;
+      color: #333;
+      font-size: 14px;
+      border-bottom: 1px solid #ccc;
     }
 
     td {
-      padding: 12px;
       font-size: 14px;
-      border-bottom: 1px solid #eee;
-      text-align: right;
     }
 
-    .bold-row {
-      background: #fafbff;
-      font-weight: 600;
+    .bold-row td {
+      font-weight: bold;
+      background-color: #fdfdfd;
     }
 
     .projection {
-      background: #eaf4ff;
-      color: #003366;
-    }
-
-    td[contenteditable="true"] {
-      background-color: #fffbe7;
-      border: 1px solid #ccc;
-      cursor: text;
-    }
-
-    #financialChart {
-      margin-top: 50px;
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
-    }
-
-    #toggleDrawer {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: var(--accent);
-      color: white;
-      border: none;
-      padding: 10px 16px;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-      z-index: 10;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      background-color: #fef9f1;
     }
 
     #drawer {
       position: fixed;
       top: 0;
-      right: -420px;
-      width: 400px;
+      right: -100%;
+      width: 15%;
       height: 100%;
-      background: white;
-      border-left: 1px solid #ccc;
-      box-shadow: -2px 0 12px rgba(0,0,0,0.1);
-      transition: right 0.4s ease;
-      z-index: 1001;
+      background-color: #fff;
+      box-shadow: -2px 0 8px rgba(0, 0, 0, 0.2);
+      transition: right 0.3s ease;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
     }
 
     #drawer.open {
@@ -159,82 +226,110 @@
     }
 
     #drawer .close-btn {
-      font-size: 20px;
-      padding: 10px;
+      align-self: flex-end;
+      padding: 12px 16px;
+      font-size: 24px;
       cursor: pointer;
-      color: #888;
     }
 
     #drawer iframe {
-      width: 100%;
-      height: calc(100% - 40px);
       border: none;
+      width: 100%;
+      height: 100%;
     }
 
-    .psi-link {
-      position: fixed;
-      top: 16px;
-      left: 20px;
-      font-size: 24px;
-      font-weight: bold;
-      background: #e6f0ff;
-      color: var(--primary);
-      padding: 8px 10px;
-      border-radius: 6px;
-      text-decoration: none;
-      z-index: 1000;
+    #toggleDrawer {
+      background-color: #d6e9ff;         /* slightly darker light blue */
+      color: #004ccf;                    /* richer blue text */
+      border: 1px solid #b5d6ff;         /* soft border */
+      padding: 10px 18px;
+      font-size: 15px;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      font-weight: 500;
+      letter-spacing: 0.3px;
     }
 
-    .psi-link:hover {
-      background: #d0e4ff;
+    #toggleDrawer:hover {
+      background-color: #c2dcff;         /* darker on hover */
+      box-shadow: 0 4px 10px rgba(0, 76, 207, 0.12);
+      transform: translateY(-1px);
+    }
+
+    #toggleDrawer:active {
+      background-color: #b3d2ff;         /* deeper tone on click */
+      transform: translateY(0);
+    }
+
+    canvas {
+      margin-top: 30px;
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
     }
   </style>
 </head>
+
 <body>
-  <button id="toggleDrawer">Show raw data</button>
+  <div class="sidebar">
+    <h2>VALTUO</h2>
+    <a class="nav-link" href="#">Valuation Summary</a>
+    <a class="nav-link" href="#">DCF <span>$XX,XXX</span></a>
+    <a class="nav-link" href="#">Public Comps <span>$XX,XXX</span></a>
+    <a class="nav-link" href="#">Private Comps <span>$XX,XXX</span></a>
+    <a class="nav-link" href="#">Fast Forward</a>
+    <a class="nav-link" href="#">Beneficiary</a>
+  </div>
+
+  <div class="main-content">
+    <div class="top-controls">
+      <a href="home.html" class="psi-link">&Psi;</a>
+      <div class="controls">
+        <label for="tickerSelect">Ticker:</label>
+        <select id="tickerSelect"></select>
+        <button id="refreshButton">Refresh</button>
+        <button id="toggleDrawer">Show raw data</button>
+      </div>
+    </div>
+
+    <h1 id="mainTitle">DCF Valuation — AAPL</h1>
+
+    <div class="table-container">
+      <table id="dcfTable">
+        <thead>
+          <tr>
+            <th>Metric (in millions $)</th>
+            <th>2020</th>
+            <th>2021</th>
+            <th>2022</th>
+            <th>2023</th>
+            <th>2024</th>
+            <th class="projection">2025</th>
+            <th class="projection">2026</th>
+            <th class="projection">2027</th>
+            <th class="projection">2028</th>
+            <th class="projection">2029</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <canvas id="financialChart" width="1200" height="400"></canvas>
+  </div>
+
   <div id="drawer">
     <span class="close-btn">&times;</span>
     <iframe src="calculations.html"></iframe>
   </div>
 
-  <a href="home.html" class="psi-link">Ψ</a>
-
-  <div class="controls">
-    <label for="tickerSelect">Ticker:</label>
-    <select id="tickerSelect"></select>
-    <button id="refreshButton">Refresh</button>
-  </div>
-
-  <h1 id="mainTitle">DCF Valuation — AAPL</h1>
-
-  <div class="table-container">
-    <table id="dcfTable">
-      <thead>
-        <tr>
-          <th>Metric (in millions $)</th>
-          <th>2020</th>
-          <th>2021</th>
-          <th>2022</th>
-          <th>2023</th>
-          <th>2024</th>
-          <th class="projection">2025</th>
-          <th class="projection">2026</th>
-          <th class="projection">2027</th>
-          <th class="projection">2028</th>
-          <th class="projection">2029</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
-
-  <canvas id="financialChart" width="1200" height="400"></canvas>
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// JavaScript logic goes here (over 400 lines, including chart rendering, editable table handling, projections, API calls, and DOM manipulation)
-
-const API_BASE = 'http://localhost:3000';
+  <script>
+    const API_BASE = 'http://localhost:3000';
 const PROJ_GROWTH = 0.05;
 let financialChart;
 
@@ -479,6 +574,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 });
-</script>
+  </script>
 </body>
+
 </html>

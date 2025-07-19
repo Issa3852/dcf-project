@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Apple WACC Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #0057ff;
+      --accent: #00c9a7;
+      --light-bg: #f5f7fb;
+      --card-bg: #fff;
+      --text-dark: #111;
+      --text-subtle: #666;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: var(--light-bg);
+      padding: 40px;
+      color: var(--text-dark);
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      margin-bottom: 40px;
+    }
+
+    .note {
+      background: #eef2ff;
+      border-radius: 999px;
+      text-align: center;
+      padding: 10px 20px;
+      margin: -20px auto 30px;
+      font-size: 14px;
+      width: fit-content;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f5f7fa;
+      font-weight: 600;
+    }
+
+    .output-box {
+      background: #eaf3ff;
+      color: var(--primary);
+      padding: 20px;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: 600;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0, 87, 255, 0.08);
+      margin-top: 30px;
+    }
+
+    canvas {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Apple Inc (AAPL) – Weighted Average Cost of Capital (WACC)</h1>
+
+  <div class="card">
+    <canvas id="waccAreaChart" height="180"></canvas>
+    <div class="note">Apple's WACC trend simulation — last 24 months</div>
+  </div>
+
+  <div class="card">
+    <h3>WACC Inputs & Ranges</h3>
+    <table>
+      <thead>
+        <tr><th>Input</th><th>Range</th><th>Selected</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Cost of Equity</td><td>8.0% – 10.4%</td><td>9.2%</td></tr>
+        <tr><td>Cost of Debt</td><td>5.0% – 5.0%</td><td>5.0%</td></tr>
+        <tr><td>Tax Rate</td><td>14.6% – 15.1%</td><td>14.85%</td></tr>
+        <tr><td>WACC</td><td>7.9% – 10.2%</td><td><strong style="color: var(--primary);">9.0%</strong></td></tr>
+      </tbody>
+    </table>
+    <div class="output-box">Apple WACC (Selected): 9.0%</div>
+  </div>
+
+  <div class="card">
+    <h3>Beta Breakdown & Peers</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Debt/Equity</th>
+          <th>Beta</th>
+          <th>Unlevered Beta</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Apple Inc (AAPL)</td><td>0.03</td><td>1.03</td><td>1.00</td></tr>
+        <tr><td>AstroNova Inc (ALOT)</td><td>0.53</td><td>0.88</td><td>0.61</td></tr>
+        <tr><td>Amazon.com Inc (AMZN)</td><td>0.03</td><td>1.36</td><td>1.32</td></tr>
+        <tr><td>Alphabet Inc (GOOGL)</td><td>0.01</td><td>0.95</td><td>0.95</td></tr>
+        <tr><td>Hewlett Packard (HPE)</td><td>0.67</td><td>1.89</td><td>1.20</td></tr>
+        <tr><td>HP Inc (HPQ)</td><td>0.40</td><td>1.28</td><td>0.95</td></tr>
+        <tr><td>iGO Inc (IGOI)</td><td>0.92</td><td>0.89</td><td>0.50</td></tr>
+        <tr><td>Microsoft Corp (MSFT)</td><td>0.02</td><td>0.99</td><td>0.97</td></tr>
+        <tr><td>Socket Mobile (SCKT)</td><td>0.41</td><td>0.82</td><td>0.61</td></tr>
+        <tr><td>TransAct Tech (TACT)</td><td>0.08</td><td>0.68</td><td>0.64</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const areaCtx = document.getElementById('waccAreaChart').getContext('2d');
+    const labels = [];
+    const waccData = [];
+    let wacc = 8.4;
+
+    for (let i = 0; i < 24; i++) {
+      const month = new Date();
+      month.setMonth(month.getMonth() - (23 - i));
+      const label = month.toLocaleString('default', { month: 'short', year: '2-digit' });
+      labels.push(label);
+      wacc += (Math.random() - 0.5) * 0.05;
+      waccData.push(parseFloat(wacc.toFixed(2)));
+    }
+
+    new Chart(areaCtx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'WACC (%)',
+          data: waccData,
+          fill: true,
+          backgroundColor: 'rgba(0, 87, 255, 0.12)',
+          borderColor: '#0057ff',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 0
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `WACC: ${ctx.parsed.y.toFixed(2)}%`
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { maxRotation: 0, minRotation: 0 },
+            grid: { display: false }
+          },
+          y: {
+            title: { display: true, text: 'WACC (%)' },
+            beginAtZero: false,
+            grid: { color: '#f0f0f0' }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
