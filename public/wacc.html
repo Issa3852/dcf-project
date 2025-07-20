@@ -9,35 +9,61 @@
     :root {
       --primary: #0057ff;
       --accent: #00c9a7;
-      --light-bg: #f5f7fb;
+      --bg: #f5f7fb;
       --card-bg: #fff;
-      --text-dark: #111;
-      --text-subtle: #666;
+      --text: #111;
+      --subtle: #666;
+      --note-bg: #eef2ff;
+      --th-bg: #f5f7fa;
+      --td-bg: #ffffff;
+      --output-bg: #eaf3ff;
+      --output-text: var(--primary);
+      --canvas-bg: white;
+      --grid-color: #f0f0f0;
+    }
+
+    body.dark-theme {
+      --primary: #4fc3f7;
+      --accent: #00c9a7;
+      --bg: #121212;
+      --card-bg: #1c1c1c;
+      --text: #e0e0e0;
+      --subtle: #aaa;
+      --note-bg: #21293a;
+      --th-bg: #222;
+      --td-bg: #1a1a1a;
+      --output-bg: #1f2937;
+      --output-text: #4fc3f7;
+      --canvas-bg: #181a1f;
+      --grid-color: #2a2a2a;
     }
 
     body {
       margin: 0;
       font-family: 'Inter', sans-serif;
-      background: var(--light-bg);
+      background: var(--bg);
+      color: var(--text);
       padding: 40px;
-      color: var(--text-dark);
+      transition: background 0.3s, color 0.3s;
     }
 
     h1 {
       font-size: 28px;
       margin-bottom: 20px;
+      color: var(--primary);
     }
 
     .card {
       background: var(--card-bg);
       padding: 30px;
       border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       margin-bottom: 40px;
+      transition: background 0.3s;
     }
 
     .note {
-      background: #eef2ff;
+      background: var(--note-bg);
       border-radius: 999px;
       text-align: center;
       padding: 10px 20px;
@@ -45,6 +71,7 @@
       font-size: 14px;
       width: fit-content;
       box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      color: var(--subtle);
     }
 
     table {
@@ -56,18 +83,22 @@
 
     th, td {
       padding: 10px;
-      border-bottom: 1px solid #eee;
       text-align: left;
     }
 
     th {
-      background-color: #f5f7fa;
+      background-color: var(--th-bg);
       font-weight: 600;
+      color: var(--subtle);
+    }
+
+    td {
+      background-color: var(--td-bg);
     }
 
     .output-box {
-      background: #eaf3ff;
-      color: var(--primary);
+      background: var(--output-bg);
+      color: var(--output-text);
       padding: 20px;
       border-radius: 12px;
       font-size: 20px;
@@ -78,13 +109,30 @@
     }
 
     canvas {
-      background: white;
+      background: var(--canvas-bg);
       border-radius: 12px;
       padding: 20px;
+      transition: background 0.3s;
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: var(--primary);
+      color: white;
+      transition: background 0.3s;
     }
   </style>
 </head>
 <body>
+  <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">Dark Theme</button>
+
   <h1>Apple Inc (AAPL) – Weighted Average Cost of Capital (WACC)</h1>
 
   <div class="card">
@@ -112,12 +160,7 @@
     <h3>Beta Breakdown & Peers</h3>
     <table>
       <thead>
-        <tr>
-          <th>Company</th>
-          <th>Debt/Equity</th>
-          <th>Beta</th>
-          <th>Unlevered Beta</th>
-        </tr>
+        <tr><th>Company</th><th>Debt/Equity</th><th>Beta</th><th>Unlevered Beta</th></tr>
       </thead>
       <tbody>
         <tr><td>Apple Inc (AAPL)</td><td>0.03</td><td>1.03</td><td>1.00</td></tr>
@@ -135,7 +178,7 @@
   </div>
 
   <script>
-    const areaCtx = document.getElementById('waccAreaChart').getContext('2d');
+    let waccChart;
     const labels = [];
     const waccData = [];
     let wacc = 8.4;
@@ -145,46 +188,84 @@
       month.setMonth(month.getMonth() - (23 - i));
       const label = month.toLocaleString('default', { month: 'short', year: '2-digit' });
       labels.push(label);
-      wacc += (Math.random() - 0.5) * 0.05;
+      wacc += (Math.random() - 0.5) * 0.15;
       waccData.push(parseFloat(wacc.toFixed(2)));
     }
 
-    new Chart(areaCtx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'WACC (%)',
-          data: waccData,
-          fill: true,
-          backgroundColor: 'rgba(0, 87, 255, 0.12)',
-          borderColor: '#0057ff',
-          tension: 0.3,
-          borderWidth: 2,
-          pointRadius: 0
-        }]
-      },
-      options: {
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `WACC: ${ctx.parsed.y.toFixed(2)}%`
+    function drawChart() {
+      const ctx = document.getElementById('waccAreaChart').getContext('2d');
+      if (waccChart) waccChart.destroy();
+
+      const isDark = document.body.classList.contains('dark-theme');
+      const borderColor = isDark ? '#4fc3f7' : '#0057ff';
+      const bgColor = isDark ? 'rgba(79, 195, 247, 0.15)' : 'rgba(0, 87, 255, 0.12)';
+      const gridColor = getComputedStyle(document.body).getPropertyValue('--grid-color').trim();
+      const tickColor = getComputedStyle(document.body).getPropertyValue('--subtle').trim();
+
+      waccChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'WACC (%)',
+            data: waccData,
+            fill: true,
+            backgroundColor: bgColor,
+            borderColor: borderColor,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 0
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => `WACC: ${ctx.parsed.y.toFixed(2)}%`
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: tickColor, maxRotation: 0, minRotation: 0 },
+              grid: { display: false }
+            },
+            y: {
+              ticks: { color: tickColor },
+              title: { display: true, text: 'WACC (%)', color: tickColor },
+              beginAtZero: false,
+              grid: { color: gridColor }
             }
           }
-        },
-        scales: {
-          x: {
-            ticks: { maxRotation: 0, minRotation: 0 },
-            grid: { display: false }
-          },
-          y: {
-            title: { display: true, text: 'WACC (%)' },
-            beginAtZero: false,
-            grid: { color: '#f0f0f0' }
-          }
         }
+      });
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      const btn = document.getElementById('themeToggleBtn');
+
+      body.classList.toggle('dark-theme');
+      const isDark = body.classList.contains('dark-theme');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      btn.textContent = isDark ? 'Light Theme' : 'Dark Theme';
+      drawChart();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      const btn = document.getElementById('themeToggleBtn');
+
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-theme');
+        btn.textContent = 'Light Theme';
+      } else {
+        document.body.classList.remove('dark-theme');
+        btn.textContent = 'Dark Theme';
       }
+
+      drawChart();
     });
   </script>
 </body>
