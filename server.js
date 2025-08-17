@@ -63,12 +63,15 @@ app.get('/annual-financials', async (req, res) => {
         SUM(i.depreciation_and_amortization)             AS da,
         SUM(i.income_tax_expense)                        AS tax,
         SUM(c.capital_expenditure)                       AS capex,
-        SUM(c.change_in_working_capital)                 AS wc
+        SUM(c.change_in_working_capital)                 AS wc,
+        SUM(c.other_non_cash_items)                      AS other_non_cash_items,
+        SUM(c.deferred_income_tax)                       AS deferred_income_tax,
+        SUM(c.acquisitions_net)                          AS acquisitions_net
       FROM income_statements i
       JOIN cashflow_statements c
-        ON i.symbol        = c.symbol
+        ON i.symbol = c.symbol
        AND i.calendar_year = c.calendar_year
-       AND i.period        = c.period
+       AND i.period = c.period
       WHERE i.symbol = $1
       GROUP BY i.calendar_year
       ORDER BY i.calendar_year DESC
@@ -77,16 +80,19 @@ app.get('/annual-financials', async (req, res) => {
 
     const payload = rows.reverse().map(r => ({
       calendar_year: r.calendar_year,
-      revenue:       Number(r.revenue)   / 1e6,
-      cogs:          Number(r.cogs)      / 1e6,
-      grossprofit:   Number(r.grossprofit)/ 1e6,
-      sga:           Number(r.sga)       / 1e6,
-      rnd:           Number(r.rnd)       / 1e6,
-      ebit:          Number(r.ebit)      / 1e6,
-      da:            Number(r.da)        / 1e6,
-      tax:           Number(r.tax)       / 1e6,
-      capex:         Number(r.capex)     / 1e6,
-      wc:            Number(r.wc)        / 1e6,
+      revenue:       Number(r.revenue) / 1e6,
+      cogs:          Number(r.cogs) / 1e6,
+      grossprofit:   Number(r.grossprofit) / 1e6,
+      sga:           Number(r.sga) / 1e6,
+      rnd:           Number(r.rnd) / 1e6,
+      ebit:          Number(r.ebit) / 1e6,
+      da:            Number(r.da) / 1e6,
+      tax:           Number(r.tax) / 1e6,
+      capex:         Number(r.capex) / 1e6,
+      wc:            Number(r.wc) / 1e6,
+      other_non_cash_items: Number(r.other_non_cash_items) / 1e6,
+      deferred_income_tax:  Number(r.deferred_income_tax)  / 1e6,
+      acquisitions_net:     Number(r.acquisitions_net)     / 1e6
     }));
 
     res.json(payload);
@@ -96,7 +102,7 @@ app.get('/annual-financials', async (req, res) => {
   }
 });
 
-// 3) distinct years for chosen symbol
+// 3) distinct years
 app.get('/years', async (req, res) => {
   let symbol;
   try { symbol = getCompany(req); }
@@ -116,7 +122,7 @@ app.get('/years', async (req, res) => {
   }
 });
 
-// 4) distinct periods for chosen symbol
+// 4) distinct periods
 app.get('/periods', async (req, res) => {
   let symbol;
   try { symbol = getCompany(req); }
@@ -136,7 +142,7 @@ app.get('/periods', async (req, res) => {
   }
 });
 
-// 5) single‑quarter financials for chosen symbol
+// 5) filtered quarterly financials
 app.get('/filtered-financials', async (req, res) => {
   let symbol;
   try { symbol = getCompany(req); }
@@ -145,7 +151,15 @@ app.get('/filtered-financials', async (req, res) => {
   try {
     const { rows } = await db.query(`
       WITH cf AS (
-        SELECT symbol, calendar_year, period, capital_expenditure, change_in_working_capital
+        SELECT
+          symbol,
+          calendar_year,
+          period,
+          capital_expenditure,
+          change_in_working_capital,
+          other_non_cash_items,
+          deferred_income_tax,
+          acquisitions_net
         FROM cashflow_statements
         WHERE symbol = $1
       )
@@ -153,19 +167,21 @@ app.get('/filtered-financials', async (req, res) => {
         i.calendar_year,
         i.period,
         i.revenue,
-        i.cost_of_revenue   AS cogs,
-        i.gross_profit      AS grossprofit,
+        i.cost_of_revenue AS cogs,
         i.selling_general_and_administrative_expenses AS sga,
-        i.research_and_development_expenses           AS rnd,
-        i.depreciation_and_amortization                AS da,
-        i.income_tax_expense                           AS tax,
-        cf.capital_expenditure                         AS capex,
-        cf.change_in_working_capital                   AS wc
+        i.research_and_development_expenses AS rnd,
+        i.depreciation_and_amortization AS da,
+        i.income_tax_expense AS tax,
+        cf.capital_expenditure AS capex,
+        cf.change_in_working_capital AS wc,
+        cf.other_non_cash_items,
+        cf.deferred_income_tax,
+        cf.acquisitions_net
       FROM income_statements i
       LEFT JOIN cf
-        ON i.symbol        = cf.symbol
+        ON i.symbol = cf.symbol
        AND i.calendar_year = cf.calendar_year
-       AND i.period        = cf.period
+       AND i.period = cf.period
       WHERE i.symbol = $1
       ORDER BY i.calendar_year DESC, i.period DESC;
     `, [symbol]);
@@ -177,7 +193,7 @@ app.get('/filtered-financials', async (req, res) => {
   }
 });
 
-// 6) four‑quarter trend for any metric
+// 6) metric trend data
 app.get('/trend-data', async (req, res) => {
   let symbol;
   try { symbol = getCompany(req); }
@@ -206,7 +222,7 @@ app.get('/trend-data', async (req, res) => {
   }
 });
 
-// 7) DCF input data (estimated FCF in millions)
+// 7) DCF data
 app.get('/dcf-data', async (req, res) => {
   let symbol;
   try { symbol = getCompany(req); }
@@ -235,12 +251,66 @@ app.get('/dcf-data', async (req, res) => {
   }
 });
 
-// 8) DCF runner
+// 8) DCF calculator (post)
 app.post('/api/run_dcf', (req, res) => {
   const { revenue, cogs, sga, rnd, da, capex, wc } = req.body;
   const gp   = revenue.map((r, i) => r - cogs[i]);
   const fcff = gp.map((g, i) => g - sga[i] - rnd[i] + da[i] - capex[i] - wc[i]);
   res.json({ gp, fcff });
 });
+
+// 9) All joined financials (income + cashflow) by year/period
+app.get('/all-financials', async (req, res) => {
+  let symbol;
+  try { symbol = getCompany(req); }
+  catch (err) { return res.status(400).json({ error: err.message }); }
+
+  try {
+    const { rows } = await db.query(`
+      WITH cf AS (
+        SELECT
+          symbol,
+          calendar_year,
+          period,
+          capital_expenditure,
+          change_in_working_capital,
+          other_non_cash_items,
+          deferred_income_tax,
+          acquisitions_net
+        FROM cashflow_statements
+        WHERE symbol = $1
+      )
+      SELECT
+        i.symbol AS ticker,
+        i.calendar_year,
+        i.period,
+        i.revenue,
+        i.cost_of_revenue AS cogs,
+        i.gross_profit AS grossprofit,
+        i.selling_general_and_administrative_expenses AS sga,
+        i.research_and_development_expenses AS rnd,
+        i.operating_income AS ebit,
+        i.depreciation_and_amortization AS da,
+        cf.capital_expenditure AS capex,
+        cf.change_in_working_capital AS wc_change,
+        cf.other_non_cash_items,
+        cf.deferred_income_tax,
+        cf.acquisitions_net
+      FROM income_statements i
+      LEFT JOIN cf
+        ON i.symbol = cf.symbol
+       AND i.calendar_year = cf.calendar_year
+       AND i.period = cf.period
+      WHERE i.symbol = $1
+      ORDER BY i.calendar_year DESC, i.period DESC;
+    `, [symbol]);
+
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 app.listen(PORT, () => console.log(`Server running at http://localhost:${PORT}`));
