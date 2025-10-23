@@ -10,11 +10,13 @@
     .sidebar h2 { font-size:28px; margin-bottom:30px; font-weight:bold; letter-spacing:.5px; }
     .nav-link { margin-bottom:18px; font-size:16px; color:#333; text-decoration:none; display:flex; justify-content:space-between; }
     .nav-link:hover { color:#007bff; }
+
     .main-content { flex-grow:1; padding:40px; overflow-y:auto; }
     .top-controls { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
     .top-controls .controls { display:flex; align-items:center; gap:10px; }
     .top-controls label, .top-controls select, .top-controls button { font-size:16px; }
     .psi-link { font-size:24px; text-decoration:none; color:#007bff; font-weight:bold; }
+
     .table-container { background:#fff; border-radius:10px; padding:20px; box-shadow:0 3px 8px rgba(0,0,0,.05); overflow-x:auto; margin-top:20px; }
     table { width:100%; border-collapse:collapse; min-width:1200px; }
     th, td { padding:12px; text-align:right; }
@@ -22,15 +24,47 @@
     td { font-size:14px; }
     .bold-row td { font-weight:bold; background:#fdfdfd; }
     .projection { background:#fef9f1; }
+
+    /* Section cards */
+    .section-card { background:#fff; border-radius:12px; padding:24px; box-shadow:0 3px 8px rgba(0,0,0,.06); margin-top:30px; }
+    .section-card h2 { font-family:'Inter',sans-serif; font-weight:700; font-size:22px; margin:0 0 14px; color:#004ccf; }
+
     #drawer { position:fixed; top:0; right:-100%; width:15%; height:100%; background:#fff; box-shadow:-2px 0 8px rgba(0,0,0,.2); transition:right .3s ease; z-index:999; display:flex; flex-direction:column; }
     #drawer.open { right:0; }
     #drawer .close-btn { align-self:flex-end; padding:12px 16px; font-size:24px; cursor:pointer; }
     #drawer iframe { border:none; width:100%; height:100%; }
+
     #toggleDrawer { background:#d6e9ff; color:#004ccf; border:1px solid #b5d6ff; padding:10px 18px; font-size:15px; border-radius:10px; font-family:'Inter', sans-serif; box-shadow:0 2px 6px rgba(0,0,0,.04); cursor:pointer; transition:all .25s ease; font-weight:500; letter-spacing:.3px; }
     #toggleDrawer:hover { background:#c2dcff; box-shadow:0 4px 10px rgba(0,76,207,.12); transform:translateY(-1px); }
     #toggleDrawer:active { background:#b3d2ff; transform:translateY(0); }
+
+    /* Chart */
     canvas { margin-top:30px; background:#fff; border-radius:10px; padding:20px; box-shadow:0 3px 8px rgba(0,0,0,.05); }
+
+    /* --- Formulas Appendix (accordion) --- */
+    .accordion-card { border-radius:12px; background:#fff; box-shadow:0 3px 8px rgba(0,0,0,.06); margin-top:30px; }
+    .accordion-header {
+      width:100%; display:flex; align-items:center; justify-content:space-between;
+      padding:18px 22px; border:none; background:transparent; cursor:pointer;
+      font-family:'Inter',sans-serif; font-weight:700; font-size:22px; color:#004ccf;
+    }
+    .accordion-header .chev { transition:transform .2s ease; }
+    .accordion-card.open .accordion-header .chev { transform:rotate(180deg); }
+    .accordion-panel { max-height:0; overflow:hidden; transition:max-height .25s ease; padding:0 22px 0 22px; }
+    .accordion-card.open .accordion-panel { padding:0 22px 18px 22px; }
+    .formula-list h4 { margin:18px 0 6px; font-size:18px; color:#333; }
+    .formula-note { color:#777; font-size:13px; margin-top:4px; }
+    .math { font-size:16px; background:#f8fafc; border-radius:8px; padding:10px 12px; display:inline-block; }
   </style>
+
+  <!-- MathJax for clean formulas -->
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 </head>
 
 <body>
@@ -38,7 +72,7 @@
     <h2>VALTUO</h2>
     <a class="nav-link" href="#">Valuation Summary</a>
     <a class="nav-link" href="#">DCF <span>$XX,XXX</span></a>
-    <a class="nav-link" href="WACC.html" style="margin-left:10px;font-size:15px;">↳ WACC</a>
+    <a class="nav-link" href="wacc.html" style="margin-left:10px;font-size:15px;">↳ WACC</a>
     <a class="nav-link" href="#">Public Comps <span>$XX,XXX</span></a>
     <a class="nav-link" href="#">Private Comps <span>$XX,XXX</span></a>
     <a class="nav-link" href="#">Fast Forward</a>
@@ -59,24 +93,115 @@
 
     <h1 id="mainTitle">DCF Valuation — AAPL</h1>
 
-    <div class="table-container">
-      <table id="dcfTable">
-        <thead>
-          <tr>
-            <th>Metric (in millions $)</th>
-            <th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th>
-            <th class="projection">2025</th>
-            <th class="projection">2026</th>
-            <th class="projection">2027</th>
-            <th class="projection">2028</th>
-            <th class="projection">2029</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+    <!-- SECTION 1: Income Statement & Free Cash Flow Build-Up -->
+    <div class="section-card">
+      <h2>Income Statement & Free Cash Flow Build-Up</h2>
+      <div class="table-container" style="margin-top:0;">
+        <table id="dcfTable">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Metric (in millions $)</th>
+              <th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th>
+              <th class="projection">2025</th>
+              <th class="projection">2026</th>
+              <th class="projection">2027</th>
+              <th class="projection">2028</th>
+              <th class="projection">2029</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
 
+    <!-- SECTION 2: Present Value Calculation (Kubera-style columns) -->
+    <div class="section-card" id="valuationCard">
+      <h2>Present Value Calculation</h2>
+
+      <div class="controls" style="display:flex;align-items:center;gap:10px;margin:12px 0 18px;">
+        <label for="valRate">Discount Rate (%):</label>
+        <input id="valRate" type="number" step="0.1" value="8" style="padding:8px 10px;border:1px solid #ccc;border-radius:8px;width:90px;">
+        <label for="valGrowth">Growth Rate (%):</label>
+        <input id="valGrowth" type="number" step="0.1" value="2" style="padding:8px 10px;border:1px solid #ccc;border-radius:8px;width:90px;">
+        <button id="valRecalc" style="background:#007bff;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;">Recalculate</button>
+      </div>
+
+      <div class="table-container" style="margin-top:0;">
+        <table id="pvTable">
+          <thead>
+            <tr>
+              <th style="text-align:left;">Metric</th>
+              <th>2025</th>
+              <th>2026</th>
+              <th>2027</th>
+              <th>2028</th>
+              <th>2029</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="pvBody"></tbody>
+        </table>
+      </div>
+
+      <h2 style="font-family:'Inter',sans-serif;font-weight:700;font-size:28px;margin-top:26px;
+                 background:linear-gradient(90deg,#007bff,#00bfff);
+                 -webkit-background-clip:text;color:transparent;text-shadow:0 0 10px rgba(0,123,255,.3);">
+        Enterprise Value = <span id="evValue">$0</span>
+      </h2>
+    </div>
+
+    <!-- Chart at bottom -->
     <canvas id="financialChart" width="1200" height="400"></canvas>
+
+    <!-- === FORMULAS APPENDIX (Dropdown) === -->
+    <section class="accordion-card" id="formulasAppendix">
+      <button class="accordion-header" type="button" aria-expanded="false" aria-controls="formulasPanel">
+        Formulas Appendix
+        <span class="chev">▾</span>
+      </button>
+
+      <div class="accordion-panel" id="formulasPanel">
+        <div class="formula-list" style="margin-top:12px;">
+          <h4>Gross Profit</h4>
+          <div class="math">\( \text{Gross Profit} = \text{Revenue} - \text{COGS} \)</div>
+
+          <h4>EBIT</h4>
+          <div class="math">\( \text{EBIT} = \text{Revenue} - \text{COGS} - \text{SG\&A} - \text{R\&D} \)</div>
+
+          <h4>NOPAT</h4>
+          <div class="math">\( \text{NOPAT} = \text{EBIT} - \text{Income Taxes} \)</div>
+
+          <h4>Free Cash Flow to Firm (FCFF)</h4>
+          <!-- matches code: NOPAT + D&A - CapEx - ΔWC -->
+          <div class="math">\( \text{FCFF} = \text{NOPAT} + \text{D\&A} - \text{CapEx} - \Delta\text{WC} \)</div>
+
+          <h4>Reinvestment (Projection Build)</h4>
+          <div class="math">
+            \( \text{Reinvestment} = \text{D\&A} + \text{Other Non\!-\!Cash} + \Delta\text{WC} + \text{Deferred Tax} - \text{CapEx} + \text{Acquisitions}_{\text{net}} \)
+          </div>
+
+          <h4>FCFF (Reinvestment variant)</h4>
+          <div class="math">\( \text{FCFF(Reinv)} = \text{EBIT} - \text{Income Taxes} - \text{Reinvestment} \)</div>
+
+          <h4>PV Factor</h4>
+          <div class="math">\( \text{PVFactor}_t = \dfrac{1}{(1+r)^t} \)</div>
+
+          <h4>Discounted Cash Flow</h4>
+          <div class="math">\( \text{DCF}_t = \dfrac{\text{FCFF}_t}{(1+r)^t} \)</div>
+
+          <h4>Terminal Value (Gordon Growth)</h4>
+          <div class="math">\( \text{TV}_T = \dfrac{\text{FCFF}_T(1+g)}{r-g} \quad (r>g) \)</div>
+
+          <h4>Present Value of Terminal Value</h4>
+          <div class="math">\( \text{PV(TV)} = \dfrac{\text{TV}_T}{(1+r)^T} \)</div>
+
+          <h4>Enterprise Value</h4>
+          <div class="math">
+            \( \text{EV} = \sum_{t=1}^{T} \dfrac{\text{FCFF}_t}{(1+r)^t} + \dfrac{\text{TV}_T}{(1+r)^T} \)
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 
   <div id="drawer">
@@ -90,8 +215,8 @@
     const PROJ_GROWTH = 0.05;
     let financialChart;
 
-    function parseNumber(str){ return parseFloat(String(str).replace(/,/g,'')) || 0; }
-    function formatNumber(num){ return Number(num).toLocaleString('en-US',{maximumFractionDigits:0}); }
+    const parseNumber = (str) => parseFloat(String(str).replace(/,/g,'')) || 0;
+    const formatNumber = (num) => Number(num).toLocaleString('en-US',{maximumFractionDigits:0});
 
     function updateChartFromTable(){
       if (!financialChart) return;
@@ -99,8 +224,7 @@
       const projCount = 5;
       const total = financialChart.data.labels.length;
 
-      const getProj = idx =>
-        Array.from(rows[idx].cells).slice(-projCount).map(td => parseNumber(td.innerText));
+      const getProj = (idx) => Array.from(rows[idx].cells).slice(-projCount).map(td => parseNumber(td.innerText));
 
       const revProjRaw   = getProj(0);
       const ebitProjRaw  = getProj(5);
@@ -118,7 +242,7 @@
       const fcfReinvFull = [hist2024FcfReinv, ...fcfReinvProj];
 
       const padCount = total - revFull.length;
-      const pad = cnt => Array(Math.max(0,cnt)).fill(null);
+      const pad = (cnt) => Array(Math.max(0,cnt)).fill(null);
 
       financialChart.data.datasets[4].data = pad(padCount).concat(revFull);
       financialChart.data.datasets[5].data = pad(padCount).concat(ebitFull);
@@ -149,12 +273,13 @@
       for (let i = 0; i < rev.length; i++){
         const gpVal   = parseNumber(rev[i].innerText) - parseNumber(cogs[i].innerText);
         const ebitVal = gpVal - parseNumber(sga[i].innerText) - parseNumber(rnd[i].innerText);
+
         gp[i].innerText   = formatNumber(gpVal);
         ebit[i].innerText = formatNumber(ebitVal);
 
-        // FCFF (classic)
+        // FCFF (classic): NOPAT + D&A - CapEx - ΔWC
         const nopat   = ebitVal - parseNumber(tax[i].innerText);
-        const fcffVal = nopat + parseNumber(da[i].innerText) + parseNumber(capex[i].innerText) - parseNumber(wc[i].innerText);
+        const fcffVal = nopat + parseNumber(da[i].innerText) - parseNumber(capex[i].innerText) - parseNumber(wc[i].innerText);
         fcff[i].innerText = formatNumber(fcffVal);
 
         // Projection-only: Reinvestment & FCFF(Reinvestment)
@@ -179,7 +304,7 @@
         }
       }
 
-      // --- collect FCFF projections (2025..2029) and store for PV page ---
+      // Persist FCFF projections for PV section
       const projCount = 5;
       const fcffProj = fcff.slice(-projCount).map(td => parseNumber(td.innerText));
       const yearsProj = ['2025','2026','2027','2028','2029'];
@@ -192,13 +317,19 @@
       }
 
       updateChartFromTable();
+      recalcValuation();
     }
 
     async function renderChart(data){
       const ctx = document.getElementById('financialChart').getContext('2d');
       if (financialChart) financialChart.destroy();
 
-      const g = (c) => { const grad = ctx.createLinearGradient(0,0,0,400); grad.addColorStop(0,c.replace('1)', '0.4)')); grad.addColorStop(1,c.replace('1)', '0)')); return grad; };
+      const g = (c) => {
+        const grad = ctx.createLinearGradient(0,0,0,400);
+        grad.addColorStop(0,c.replace('1)', '0.4)'));
+        grad.addColorStop(1,c.replace('1)', '0)'));
+        return grad;
+      };
 
       financialChart = new Chart(ctx, {
         type:'line',
@@ -250,7 +381,7 @@
         const years = [2020,2021,2022,2023,2024];
         const lastYear = years[years.length-1];
 
-        // carry-forward for projections
+        // carry-forward used in projections for reinvestment build
         window._carry = {
           other:    (grouped[lastYear]?.other    ?? 0),
           deferred: (grouped[lastYear]?.deferred ?? 0),
@@ -275,9 +406,14 @@
 
         metrics.forEach(metric => {
           const row = document.createElement('tr');
-          if (['Gross Profit','Operating Income (EBIT)','FCFF','FCFF (Reinvestment)'].includes(metric)) row.classList.add('bold-row');
+          if (['Gross Profit','Operating Income (EBIT)','FCFF','FCFF (Reinvestment)'].includes(metric)) {
+            row.classList.add('bold-row');
+          }
 
-          const labelCell = document.createElement('td'); labelCell.innerText = metric; row.appendChild(labelCell);
+          const labelCell = document.createElement('td');
+          labelCell.innerText = metric;
+          labelCell.style.textAlign = 'left';
+          row.appendChild(labelCell);
 
           years.forEach(y => {
             const td = document.createElement('td');
@@ -290,14 +426,26 @@
                 case 'Gross Profit': val=g.revenue - g.cogs; break;
                 case 'SG&A': val=g.sga; break;
                 case 'R&D': val=g.rnd; break;
-                case 'Operating Income (EBIT)': { const ebit=g.revenue - g.cogs - g.sga - g.rnd; val=ebit; chartData.ebit.push(val); break; }
+                case 'Operating Income (EBIT)': {
+                  const ebit=g.revenue - g.cogs - g.sga - g.rnd; val=ebit; chartData.ebit.push(val); break;
+                }
                 case 'Income Tax': val=g.tax; break;
                 case 'D&A': val=g.da; break;
                 case 'CapEx': val=g.capex; break;
                 case 'Δ Working Capital': val=g.wc; break;
-                case 'Reinvestment': { const reinv=g.da + g.other + g.wc + g.deferred - g.capex + g.acq; val=reinv; break; }
-                case 'FCFF': { const e=g.revenue - g.cogs - g.sga - g.rnd; const np=e - g.tax; val=np + g.da + g.capex - g.wc; chartData.fcff.push(val); break; }
-                case 'FCFF (Reinvestment)': { const ebit=g.revenue - g.cogs - g.sga - g.rnd; const reinv=g.da + g.other + g.wc + g.deferred - g.capex + g.acq; val=ebit - g.tax - reinv; chartData.fcff_reinvestment.push(val); break; }
+                case 'Reinvestment': {
+                  const reinv=g.da + g.other + g.wc + g.deferred - g.capex + g.acq; val=reinv; break;
+                }
+                case 'FCFF': {
+                  const e=g.revenue - g.cogs - g.sga - g.rnd; const np=e - g.tax;
+                  /* FCFF classic: NOPAT + D&A - CapEx - ΔWC */
+                  val=np + g.da - g.capex - g.wc; chartData.fcff.push(val); break;
+                }
+                case 'FCFF (Reinvestment)': {
+                  const ebit=g.revenue - g.cogs - g.sga - g.rnd;
+                  const reinv=g.da + g.other + g.wc + g.deferred - g.capex + g.acq;
+                  val=ebit - g.tax - reinv; chartData.fcff_reinvestment.push(val); break;
+                }
               }
             }
             td.innerText = (typeof val === 'number') ? formatNumber(val) : val;
@@ -332,6 +480,118 @@
       }
     }
 
+    // === DCF Valuation Summary (LocalStorage Option, column layout) ===
+    function recalcValuation(){
+      const ticker = window._currentTicker;
+      const stored = ticker ? localStorage.getItem(`dcf_fcff_projection_${ticker}`) : null;
+
+      const pvBody = document.getElementById('pvBody');
+      const evElem = document.getElementById('evValue');
+
+      const fmt = (n) => (n == null || isNaN(n)) ? '-' : Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
+      const rowHtml = (label, arr, total=null) => {
+        const t = (total==null) ? '' : fmt(total);
+        return `
+          <tr${label==='Discounted Cash Flows' || label==='Present Value of Terminal Value' ? ' class="bold-row"' : ''}>
+            <td style="text-align:left;">${label}</td>
+            <td>${fmt(arr[0])}</td>
+            <td>${fmt(arr[1])}</td>
+            <td>${fmt(arr[2])}</td>
+            <td>${fmt(arr[3])}</td>
+            <td>${fmt(arr[4])}</td>
+            <td>${t}</td>
+          </tr>`;
+      };
+
+      if(!stored){
+        pvBody.innerHTML = '';
+        evElem.innerText = '$0';
+        return;
+      }
+
+      const { fcff } = JSON.parse(stored) || {};
+      if (!fcff || fcff.length !== 5){
+        pvBody.innerHTML = '';
+        evElem.innerText = '$0';
+        return;
+      }
+
+      const r = parseFloat(document.getElementById('valRate').value)/100;
+      const g = parseFloat(document.getElementById('valGrowth').value)/100;
+
+      const t = fcff.map((_,i)=>i+1);
+      const pvFactors = t.map(v => 1/Math.pow(1+r, v));
+      const discounted = fcff.map((cf,i) => cf * pvFactors[i]);
+      const sumPV = discounted.reduce((a,b)=>a+b,0);
+
+      const lastFCFF = fcff[fcff.length-1];
+      const tv = lastFCFF * (1 + g) / (r - g);
+
+      const tvFactor = pvFactors[pvFactors.length-1];
+      const pvTV = tv * tvFactor;
+
+      const ev = sumPV + pvTV;
+
+      const blank = [null,null,null,null,null];
+      const timePeriodsArr = t.slice();
+      const pvFactorsArr   = pvFactors.map(v => Number.isFinite(v) ? Number(v.toFixed(3)) : null);
+      const discountedArr  = discounted;
+
+      const tvArr          = blank.slice();      tvArr[4] = tv;
+      const tvFactorArr    = blank.slice();      tvFactorArr[4] = Number(tvFactor.toFixed(3));
+      const pvTvArr        = blank.slice();      pvTvArr[4] = pvTV;
+
+      pvBody.innerHTML = [
+        rowHtml('Unlevered Free Cash Flow', fcff, null),
+        rowHtml('Time Period', timePeriodsArr, null),
+        rowHtml('Present Value Factor', pvFactorsArr, null),
+        rowHtml('Discounted Cash Flows', discountedArr, sumPV),
+        rowHtml('Terminal Value', tvArr, tv),
+        rowHtml('PV Factor (for TV)', tvFactorArr, tvFactor),
+        rowHtml('Present Value of Terminal Value', pvTvArr, pvTV),
+        `<tr class="bold-row">
+           <td style="text-align:left;">Enterprise Value</td>
+           <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+           <td>${fmt(ev)}</td>
+         </tr>`
+      ].join('');
+
+      evElem.innerText = '$' + ev.toLocaleString('en-US',{maximumFractionDigits:0});
+      evElem.style.transition = 'all 0.3s ease';
+      evElem.style.transform = 'scale(1.15)';
+      evElem.style.textShadow = '0 0 15px rgba(0,123,255,.6)';
+      setTimeout(()=>{
+        evElem.style.transform = 'scale(1)';
+        evElem.style.textShadow = '0 0 10px rgba(0,123,255,.3)';
+      },300);
+    }
+
+    // Accordion toggle for Formulas Appendix
+    (function () {
+      const card = document.getElementById('formulasAppendix');
+      if (!card) return;
+      const header = card.querySelector('.accordion-header');
+      const panel  = card.querySelector('.accordion-panel');
+
+      function setOpen(isOpen){
+        card.classList.toggle('open', isOpen);
+        header.setAttribute('aria-expanded', String(isOpen));
+        if (isOpen) {
+          panel.style.maxHeight = panel.scrollHeight + 'px';
+        } else {
+          panel.style.maxHeight = '0px';
+        }
+      }
+      setOpen(false);
+      header.addEventListener('click', () => setOpen(!card.classList.contains('open')));
+      window.addEventListener('resize', () => {
+        if (card.classList.contains('open')) panel.style.maxHeight = panel.scrollHeight + 'px';
+      });
+    })();
+
+    // Wire controls + initial load
+    document.getElementById('valRecalc').addEventListener('click', recalcValuation);
+
     document.addEventListener('DOMContentLoaded', async () => {
       const tickerSelect = document.getElementById('tickerSelect');
       const refreshBtn   = document.getElementById('refreshButton');
@@ -350,13 +610,15 @@
       }
 
       async function loadTicker(t){
-        window._currentTicker = t; // <-- keep this
+        window._currentTicker = t;
         mainTitle.innerText = `DCF Valuation — ${t}`;
         iframe.src = `calculations.html?ticker=${t}`;
         await populateHistoricalData(t);
+        recalcValuation();
       }
 
       await loadTicker(tickerSelect.value || 'AAPL');
+
       tickerSelect.addEventListener('change', () => loadTicker(tickerSelect.value));
       refreshBtn.addEventListener('click',   () => loadTicker(tickerSelect.value));
 
