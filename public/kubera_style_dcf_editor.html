@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>DCF Valuation – Kubera Style</title>
+  <title>DCF Valuation – Kubera Style (with Mid‑Year Convention)</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
   <style>
     body { margin:0; font-family:'Segoe UI', Tahoma, sans-serif; background:#f8f9fc; color:#333; display:flex; height:100vh; }
@@ -55,6 +55,9 @@
     .formula-list h4 { margin:18px 0 6px; font-size:18px; color:#333; }
     .formula-note { color:#777; font-size:13px; margin-top:4px; }
     .math { font-size:16px; background:#f8fafc; border-radius:8px; padding:10px 12px; display:inline-block; }
+
+    /* Tiny badge showing timing mode */
+    .timing-badge { display:inline-block; margin-left:10px; padding:4px 8px; border-radius:999px; font-size:12px; background:#eef6ff; color:#0b63ce; border:1px solid #cfe3ff; }
   </style>
 
   <!-- MathJax for clean formulas -->
@@ -91,7 +94,7 @@
       </div>
     </div>
 
-    <h1 id="mainTitle">DCF Valuation — AAPL</h1>
+    <h1 id="mainTitle">DCF Valuation — AAPL <span id="timingBadge" class="timing-badge" title="Cash flow timing convention">Mid‑Year</span></h1>
 
     <!-- SECTION 1: Income Statement & Free Cash Flow Build-Up -->
     <div class="section-card">
@@ -118,11 +121,15 @@
     <div class="section-card" id="valuationCard">
       <h2>Present Value Calculation</h2>
 
-      <div class="controls" style="display:flex;align-items:center;gap:10px;margin:12px 0 18px;">
+      <div class="controls" style="display:flex;align-items:center;gap:10px;margin:12px 0 18px;flex-wrap:wrap;">
         <label for="valRate">Discount Rate (%):</label>
         <input id="valRate" type="number" step="0.1" value="8" style="padding:8px 10px;border:1px solid #ccc;border-radius:8px;width:90px;">
         <label for="valGrowth">Growth Rate (%):</label>
         <input id="valGrowth" type="number" step="0.1" value="2" style="padding:8px 10px;border:1px solid #ccc;border-radius:8px;width:90px;">
+        <label style="display:flex;align-items:center;gap:6px; padding:6px 10px; border:1px solid #cfe3ff; border-radius:8px; background:#f6fbff;">
+          <input id="midYearToggle" type="checkbox" checked>
+          Mid‑year convention
+        </label>
         <button id="valRecalc" style="background:#007bff;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;">Recalculate</button>
       </div>
 
@@ -172,7 +179,6 @@
           <div class="math">\( \text{NOPAT} = \text{EBIT} - \text{Income Taxes} \)</div>
 
           <h4>Free Cash Flow to Firm (FCFF)</h4>
-          <!-- matches code: NOPAT + D&A - CapEx - ΔWC -->
           <div class="math">\( \text{FCFF} = \text{NOPAT} + \text{D\&A} - \text{CapEx} - \Delta\text{WC} \)</div>
 
           <h4>Reinvestment (Projection Build)</h4>
@@ -183,21 +189,23 @@
           <h4>FCFF (Reinvestment variant)</h4>
           <div class="math">\( \text{FCFF(Reinv)} = \text{EBIT} - \text{Income Taxes} - \text{Reinvestment} \)</div>
 
-          <h4>PV Factor</h4>
+          <h4>PV Factor (End‑of‑Year)</h4>
           <div class="math">\( \text{PVFactor}_t = \dfrac{1}{(1+r)^t} \)</div>
 
-          <h4>Discounted Cash Flow</h4>
-          <div class="math">\( \text{DCF}_t = \dfrac{\text{FCFF}_t}{(1+r)^t} \)</div>
+          <h4>PV Factor (Mid‑Year Convention)</h4>
+          <div class="math">\( \text{PVFactor}^{\text{MYC}}_t = \dfrac{1}{(1+r)^{t-0.5}} \)</div>
+          <div class="formula-note">Interpretation: yearly cash flows are earned throughout the year, so we discount each \(t\) by half a year.</div>
 
           <h4>Terminal Value (Gordon Growth)</h4>
           <div class="math">\( \text{TV}_T = \dfrac{\text{FCFF}_T(1+g)}{r-g} \quad (r>g) \)</div>
 
           <h4>Present Value of Terminal Value</h4>
-          <div class="math">\( \text{PV(TV)} = \dfrac{\text{TV}_T}{(1+r)^T} \)</div>
+          <div class="math">End‑of‑Year: \( \dfrac{\text{TV}_T}{(1+r)^T} \) &nbsp; | &nbsp; Mid‑Year: \( \dfrac{\text{TV}_T}{(1+r)^{T-0.5}} \)</div>
 
           <h4>Enterprise Value</h4>
           <div class="math">
-            \( \text{EV} = \sum_{t=1}^{T} \dfrac{\text{FCFF}_t}{(1+r)^t} + \dfrac{\text{TV}_T}{(1+r)^T} \)
+            End‑of‑Year: \( \sum_{t=1}^{T} \dfrac{\text{FCFF}_t}{(1+r)^t} + \dfrac{\text{TV}_T}{(1+r)^T} \) <br/>
+            Mid‑Year: \( \sum_{t=1}^{T} \dfrac{\text{FCFF}_t}{(1+r)^{t-0.5}} + \dfrac{\text{TV}_T}{(1+r)^{T-0.5}} \)
           </div>
         </div>
       </div>
@@ -217,6 +225,15 @@
 
     const parseNumber = (str) => parseFloat(String(str).replace(/,/g,'')) || 0;
     const formatNumber = (num) => Number(num).toLocaleString('en-US',{maximumFractionDigits:0});
+
+    function setTimingBadge(){
+      const badge = document.getElementById('timingBadge');
+      const on = document.getElementById('midYearToggle').checked;
+      badge.textContent = on ? 'Mid‑Year' : 'End‑of‑Year';
+      badge.style.background = on ? '#eef6ff' : '#f6f6f6';
+      badge.style.color = on ? '#0b63ce' : '#555';
+      localStorage.setItem('dcf_midyear_enabled', on ? '1' : '0');
+    }
 
     function updateChartFromTable(){
       if (!financialChart) return;
@@ -518,22 +535,24 @@
 
       const r = parseFloat(document.getElementById('valRate').value)/100;
       const g = parseFloat(document.getElementById('valGrowth').value)/100;
+      const useMidYear = document.getElementById('midYearToggle').checked;
 
       const t = fcff.map((_,i)=>i+1);
-      const pvFactors = t.map(v => 1/Math.pow(1+r, v));
+      const effectivePeriods = t.map(v => useMidYear ? (v - 0.5) : v);
+      const pvFactors = effectivePeriods.map(v => 1/Math.pow(1+r, v));
       const discounted = fcff.map((cf,i) => cf * pvFactors[i]);
       const sumPV = discounted.reduce((a,b)=>a+b,0);
 
       const lastFCFF = fcff[fcff.length-1];
       const tv = lastFCFF * (1 + g) / (r - g);
 
-      const tvFactor = pvFactors[pvFactors.length-1];
+      const tvFactor = 1/Math.pow(1+r, useMidYear ? (t[t.length-1] - 0.5) : t[t.length-1]);
       const pvTV = tv * tvFactor;
 
       const ev = sumPV + pvTV;
 
       const blank = [null,null,null,null,null];
-      const timePeriodsArr = t.slice();
+      const timePeriodsArr = effectivePeriods.map(v => Number(v.toFixed(1)));
       const pvFactorsArr   = pvFactors.map(v => Number.isFinite(v) ? Number(v.toFixed(3)) : null);
       const discountedArr  = discounted;
 
@@ -543,7 +562,7 @@
 
       pvBody.innerHTML = [
         rowHtml('Unlevered Free Cash Flow', fcff, null),
-        rowHtml('Time Period', timePeriodsArr, null),
+        rowHtml('Time Period (years)', timePeriodsArr, null),
         rowHtml('Present Value Factor', pvFactorsArr, null),
         rowHtml('Discounted Cash Flows', discountedArr, sumPV),
         rowHtml('Terminal Value', tvArr, tv),
@@ -564,6 +583,8 @@
         evElem.style.transform = 'scale(1)';
         evElem.style.textShadow = '0 0 10px rgba(0,123,255,.3)';
       },300);
+
+      setTimingBadge();
     }
 
     // Accordion toggle for Formulas Appendix
@@ -601,6 +622,13 @@
       const closeBtn     = drawer.querySelector('.close-btn');
       const iframe       = drawer.querySelector('iframe');
 
+      // restore mid-year preference
+      const pref = localStorage.getItem('dcf_midyear_enabled');
+      if (pref !== null) {
+        document.getElementById('midYearToggle').checked = (pref === '1');
+        setTimingBadge();
+      }
+
       try {
         const res = await fetch(`${API_BASE}/companies`);
         const list = await res.json();
@@ -611,7 +639,7 @@
 
       async function loadTicker(t){
         window._currentTicker = t;
-        mainTitle.innerText = `DCF Valuation — ${t}`;
+        mainTitle.childNodes[0].nodeValue = `DCF Valuation — ${t} `; // keep badge intact
         iframe.src = `calculations.html?ticker=${t}`;
         await populateHistoricalData(t);
         recalcValuation();
@@ -629,7 +657,11 @@
           drawer.classList.remove('open');
         }
       });
+
+      // Recalc when timing convention toggles
+      document.getElementById('midYearToggle').addEventListener('change', recalcValuation);
     });
   </script>
 </body>
 </html>
+
