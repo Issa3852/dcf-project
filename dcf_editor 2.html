@@ -1,0 +1,196 @@
+<!-- Full Kubera-style layout and styling applied -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DCF – 5y Historical + 5y Projections (Dynamic FCFF)</title>
+  <style>
+    /* ...existing styles preserved... */
+  </style>
+</head>
+<body>
+  <button id="toggleDrawer">Show raw data</button>
+  <div id="drawer">
+    <span class="close-btn">&times;</span>
+    <iframe src="calculations.html"></iframe>
+  </div>
+
+  <a href="home.html" class="psi-link">Ψ</a>
+
+  <div class="controls">
+    <label for="tickerSelect">Ticker:</label>
+    <select id="tickerSelect"></select>
+    <button id="refreshButton">Refresh</button>
+  </div>
+
+  <h1 id="mainTitle">DCF Valuation — AAPL</h1>
+
+  <div class="table-container">
+    <table id="dcfTable">
+      <thead>
+        <tr>
+          <th>Metric (in millions $)</th>
+          <th>2020</th>
+          <th>2021</th>
+          <th>2022</th>
+          <th>2023</th>
+          <th>2024</th>
+          <th class="projection">2025</th>
+          <th class="projection">2026</th>
+          <th class="projection">2027</th>
+          <th class="projection">2028</th>
+          <th class="projection">2029</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <canvas id="financialChart" width="1200" height="400"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let financialChart;
+
+    async function renderChart(data) {
+      const ctx = document.getElementById('financialChart').getContext('2d');
+      if (financialChart) financialChart.destroy();
+
+      const gradient1 = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient1.addColorStop(0, 'rgba(0, 87, 255, 0.4)');
+      gradient1.addColorStop(1, 'rgba(0, 87, 255, 0)');
+
+      const gradient2 = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient2.addColorStop(0, 'rgba(40, 167, 69, 0.4)');
+      gradient2.addColorStop(1, 'rgba(40, 167, 69, 0)');
+
+      const gradient3 = ctx.createLinearGradient(0, 0, 0, 400);
+      gradient3.addColorStop(0, 'rgba(255, 193, 7, 0.4)');
+      gradient3.addColorStop(1, 'rgba(255, 193, 7, 0)');
+
+      financialChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [...data.labels, '2025','2026','2027','2028','2029'],
+          datasets: [
+            { label: 'Revenue (Historical)', data: data.revenue, borderColor: '#007bff', backgroundColor: gradient1, fill: true, tension: 0.3 },
+            { label: 'EBIT (Historical)', data: data.ebit, borderColor: '#28a745', backgroundColor: gradient2, fill: true, tension: 0.3 },
+            { label: 'FCFF (Historical)', data: data.fcff, borderColor: '#ffc107', backgroundColor: gradient3, fill: true, tension: 0.3 },
+            { label: 'Revenue (Projected)', data: [], borderColor: '#007bff', borderDash: [5,5], fill: false, tension: 0.3 },
+            { label: 'EBIT (Projected)', data: [], borderColor: '#28a745', borderDash: [5,5], fill: false, tension: 0.3 },
+            { label: 'FCFF (Projected)', data: [], borderColor: '#ffc107', borderDash: [5,5], fill: false, tension: 0.3 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: 'top' },
+            title: { display: true, text: 'Historical + Projected Financials' },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: '#222',
+              titleColor: '#fff',
+              bodyColor: '#eee',
+              borderColor: '#444',
+              borderWidth: 1
+            }
+          },
+          interaction: {
+            mode: 'nearest',
+            axis: 'x',
+            intersect: false
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Millions USD'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Fiscal Year'
+              }
+            }
+          }
+        }
+      });
+    }
+
+    async function populateHistoricalData(ticker) {
+      const res = await fetch(`/filtered-financials?company=${ticker}`);
+      const data = await res.json();
+      if (!data || !data.length) {
+        document.querySelector("#dcfTable tbody").innerHTML = `<tr><td colspan="11">No data found for ${ticker}</td></tr>`;
+        return;
+      }
+
+      const rows = [
+        { key: 'revenue', label: 'Revenue' },
+        { key: 'cogs', label: 'COGS' },
+        { key: 'grossprofit', label: 'Gross Profit' },
+        { key: 'sga', label: 'SG&A' },
+        { key: 'rnd', label: 'R&D' },
+        { key: 'ebit', label: 'EBIT' },
+        { key: 'da', label: 'D&A' },
+        { key: 'tax', label: 'Income Tax' },
+        { key: 'capex', label: 'CapEx' },
+        { key: 'wc', label: 'Working Capital Δ' },
+        { key: 'fcff', label: 'FCFF' }
+      ];
+
+      const historicalYears = data.map(d => d.calendar_year);
+
+      const tableHTML = rows.map(row => {
+        const hist = data.map(d => (d[row.key] ?? 0).toFixed(1));
+        const proj = new Array(5).fill(`<td contenteditable="true"></td>`).join('');
+        return `<tr>
+          <td>${row.label}</td>
+          ${hist.map(v => `<td>${v}</td>`).join('')}
+          ${proj}
+        </tr>`;
+      }).join('');
+
+      document.querySelector("#dcfTable tbody").innerHTML = tableHTML;
+
+      const fcff = data.map(d =>
+        (d.grossprofit - d.sga - d.rnd + d.da - d.capex - d.wc).toFixed(1)
+      );
+
+      renderChart({
+        labels: historicalYears,
+        revenue: data.map(d => d.revenue),
+        ebit: data.map(d => d.ebit),
+        fcff: fcff
+      });
+    }
+
+    async function loadTickers() {
+      const res = await fetch('/companies');
+      const tickers = await res.json();
+      const select = document.getElementById("tickerSelect");
+      select.innerHTML = tickers.map(t => `<option value="${t}">${t}</option>`).join('');
+      select.value = "AAPL";
+    }
+
+    document.getElementById("refreshButton").addEventListener("click", () => {
+      const ticker = document.getElementById("tickerSelect").value;
+      document.getElementById("mainTitle").textContent = `DCF Valuation — ${ticker}`;
+      populateHistoricalData(ticker);
+    });
+
+    document.getElementById("toggleDrawer").addEventListener("click", () => {
+      document.getElementById("drawer").classList.toggle("open");
+    });
+    document.querySelector("#drawer .close-btn").addEventListener("click", () => {
+      document.getElementById("drawer").classList.remove("open");
+    });
+
+    loadTickers().then(() => populateHistoricalData("AAPL"));
+  </script>
+</body>
+</html>

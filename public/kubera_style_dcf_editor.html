@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>DCF Valuation – Kubera Style (with Mid‑Year Convention)</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <title>DCF Valuation – Kubera Style (Mid-Year + Damodaran Story + Quarterly Transparency)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
   <style>
     body { margin:0; font-family:'Segoe UI', Tahoma, sans-serif; background:#f8f9fc; color:#333; display:flex; height:100vh; }
     .sidebar { width:220px; background:#f2f3f5; padding:30px 20px; display:flex; flex-direction:column; border-right:1px solid #ddd; }
@@ -12,20 +13,22 @@
     .nav-link:hover { color:#007bff; }
 
     .main-content { flex-grow:1; padding:40px; overflow-y:auto; }
-    .top-controls { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
-    .top-controls .controls { display:flex; align-items:center; gap:10px; }
+    .top-controls { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:16px; }
+    .top-controls .controls { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
     .top-controls label, .top-controls select, .top-controls button { font-size:16px; }
     .psi-link { font-size:24px; text-decoration:none; color:#007bff; font-weight:bold; }
 
     .table-container { background:#fff; border-radius:10px; padding:20px; box-shadow:0 3px 8px rgba(0,0,0,.05); overflow-x:auto; margin-top:20px; }
     table { width:100%; border-collapse:collapse; min-width:1200px; }
-    th, td { padding:12px; text-align:right; }
-    th { background:#f1f3f7; color:#333; font-size:14px; border-bottom:1px solid #ccc; }
-    td { font-size:14px; }
+    th, td { padding:10px 10px; text-align:right; }
+    th { background:#f1f3f7; color:#333; font-size:13px; border-bottom:1px solid #ccc; }
+    td { font-size:13px; }
     .bold-row td { font-weight:bold; background:#fdfdfd; }
     .projection { background:#fef9f1; }
+    .locked { background:#f3f4f6 !important; color:#6b7280; }
+    .subtotal { background:#f8fafc; font-weight:700; }
+    .small { font-size:12px; color:#6b7280; }
 
-    /* Section cards */
     .section-card { background:#fff; border-radius:12px; padding:24px; box-shadow:0 3px 8px rgba(0,0,0,.06); margin-top:30px; }
     .section-card h2 { font-family:'Inter',sans-serif; font-weight:700; font-size:22px; margin:0 0 14px; color:#004ccf; }
 
@@ -36,43 +39,77 @@
 
     #toggleDrawer { background:#d6e9ff; color:#004ccf; border:1px solid #b5d6ff; padding:10px 18px; font-size:15px; border-radius:10px; font-family:'Inter', sans-serif; box-shadow:0 2px 6px rgba(0,0,0,.04); cursor:pointer; transition:all .25s ease; font-weight:500; letter-spacing:.3px; }
     #toggleDrawer:hover { background:#c2dcff; box-shadow:0 4px 10px rgba(0,76,207,.12); transform:translateY(-1px); }
-    #toggleDrawer:active { background:#b3d2ff; transform:translateY(0); }
 
-    /* Chart */
+    /* Segmented controls */
+    .seg {
+      display:inline-flex; border:1px solid #cfe3ff; border-radius:12px; overflow:hidden;
+      background:#f6fbff; font-family:'Inter',sans-serif;
+    }
+    .seg button {
+      border:none; background:transparent; padding:8px 10px; cursor:pointer; font-size:13px;
+      color:#0b63ce; font-weight:700;
+    }
+    .seg button.active { background:#0b63ce; color:#fff; }
+
+    .pill {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid #cfe3ff; background:#f6fbff; color:#0b63ce;
+      font-size:13px; font-family:'Inter',sans-serif; font-weight:700;
+    }
+
+    /* EV banner */
+    .ev-banner {
+      display:flex; align-items:center; gap:12px; background:#fff;
+      border:1px solid #e5e7eb; border-radius:8px; padding:12px 16px;
+      margin:6px 0 16px;
+    }
+    .ev-title { font-family:'Inter',sans-serif; font-weight:600; font-size:14px; letter-spacing:.2px; color:#475569; }
+    .ev-number { font-family:'Inter',sans-serif; font-weight:700; font-size:28px; line-height:1; color:#111827; }
+
+    .timing-badge { display:inline-block; margin-left:10px; padding:4px 8px; border-radius:999px; font-size:12px; background:#eef6ff; color:#0b63ce; border:1px solid #cfe3ff; }
+
     canvas { margin-top:30px; background:#fff; border-radius:10px; padding:20px; box-shadow:0 3px 8px rgba(0,0,0,.05); }
 
-    /* --- Formulas Appendix (accordion) --- */
-    .accordion-card { border-radius:12px; background:#fff; box-shadow:0 3px 8px rgba(0,0,0,.06); margin-top:30px; }
-    .accordion-header {
-      width:100%; display:flex; align-items:center; justify-content:space-between;
-      padding:18px 22px; border:none; background:transparent; cursor:pointer;
-      font-family:'Inter',sans-serif; font-weight:700; font-size:22px; color:#004ccf;
+    .grid-2 { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
+    .grid-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:16px; }
+
+    .mini-card { border:1px solid #e5e7eb; border-radius:12px; padding:14px; background:#fff; }
+    .mini-card h3 { margin:0 0 10px; font-family:'Inter',sans-serif; font-size:14px; font-weight:700; color:#111827; display:flex; justify-content:space-between; align-items:center; }
+    .mini-card .row { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:8px 0; }
+    .mini-card input, .mini-card select { padding:8px 10px; border:1px solid #d1d5db; border-radius:10px; width:120px; font-size:13px; }
+    .mini-card .hint { font-size:12px; color:#6b7280; margin-top:8px; line-height:1.35; }
+    .warn { color:#b91c1c; }
+    .ok { color:#065f46; }
+    .muted { color:#6b7280; }
+
+    .ev-head{
+      font-family:'Inter',sans-serif;
+      font-weight:800;
+      font-size:28px;
+      margin-top:26px;
+      background:linear-gradient(90deg,#007bff,#00bfff);
+      -webkit-background-clip:text; background-clip:text;
+      -webkit-text-fill-color:transparent;
+      text-shadow:0 0 10px rgba(0,123,255,.25);
     }
-    .accordion-header .chev { transition:transform .2s ease; }
-    .accordion-card.open .accordion-header .chev { transform:rotate(180deg); }
-    .accordion-panel { max-height:0; overflow:hidden; transition:max-height .25s ease; padding:0 22px 0 22px; }
-    .accordion-card.open .accordion-panel { padding:0 22px 18px 22px; }
-    .formula-list h4 { margin:18px 0 6px; font-size:18px; color:#333; }
-    .formula-note { color:#777; font-size:13px; margin-top:4px; }
-    .math { font-size:16px; background:#f8fafc; border-radius:8px; padding:10px 12px; display:inline-block; }
 
-    /* Tiny badge showing timing mode */
-    .timing-badge { display:inline-block; margin-left:10px; padding:4px 8px; border-radius:999px; font-size:12px; background:#eef6ff; color:#0b63ce; border:1px solid #cfe3ff; }
+    /* --- Quarterly transparency panel --- */
+    .notice {
+      border:1px dashed #cbd5e1;
+      background:#f8fafc;
+      padding:10px 12px;
+      border-radius:10px;
+      font-size:13px;
+      color:#475569;
+      margin-top:10px;
+    }
   </style>
-
-  <!-- MathJax for clean formulas -->
-  <script>
-    window.MathJax = {
-      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
-      svg: { fontCache: 'global' }
-    };
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 </head>
 
 <body>
   <div class="sidebar">
-    <h2>VALTUO</h2>
+    <h2>Fair Value</h2>
     <a class="nav-link" href="#">Valuation Summary</a>
     <a class="nav-link" href="#">DCF <span>$XX,XXX</span></a>
     <a class="nav-link" href="wacc.html" style="margin-left:10px;font-size:15px;">↳ WACC</a>
@@ -86,38 +123,154 @@
   <div class="main-content">
     <div class="top-controls">
       <a href="home.html" class="psi-link">&Psi;</a>
+
       <div class="controls">
         <label for="tickerSelect">Ticker:</label>
         <select id="tickerSelect"></select>
         <button id="refreshButton">Refresh</button>
         <button id="toggleDrawer">Show raw data</button>
+
+        <span class="pill" title="Damodaran-style narrative mode links growth → margins → reinvestment → ROIC">
+          Story Mode: <span id="modeText">OFF</span>
+        </span>
+
+        <div class="seg" title="Annual inputs + quarterly transparency. Projections remain annual; quarterly projections are derived from annual using seasonal weights.">
+          <button id="viewAnnualBtn" class="active" type="button">Annual</button>
+          <button id="viewQuarterlyBtn" type="button">Quarterly</button>
+        </div>
+
+        <div class="seg" title="How quarterly projections are created. Recommended: Derived (no extra inputs).">
+          <button id="qProjDerivedBtn" class="active" type="button">Q Proj: Derived</button>
+          <button id="qProjFlatBtn" type="button">Q Proj: Flat</button>
+        </div>
       </div>
     </div>
 
-    <h1 id="mainTitle">DCF Valuation — AAPL <span id="timingBadge" class="timing-badge" title="Cash flow timing convention">Mid‑Year</span></h1>
+    <!-- Top EV Banner -->
+    <div class="ev-banner" aria-live="polite">
+      <div class="ev-title">DCF Implied EV</div>
+      <div class="ev-number" id="evValueTop">$0</div>
+    </div>
 
-    <!-- SECTION 1: Income Statement & Free Cash Flow Build-Up -->
+    <h1 id="mainTitle">DCF Valuation — AAPL <span id="timingBadge" class="timing-badge" title="Cash flow timing convention">Mid-Year</span></h1>
+
+    <!-- SECTION 0: Damodaran Enhancements -->
+    <div class="section-card" id="storyCard">
+      <h2>Damodaran Enhancements (Story → Mechanics)</h2>
+
+      <div class="grid-2">
+        <div class="mini-card">
+          <h3>
+            Narrative Inputs
+            <label class="pill" style="font-weight:800; cursor:pointer;">
+              <input id="storyToggle" type="checkbox" style="width:auto; margin:0;" />
+              Enable
+            </label>
+          </h3>
+
+          <div class="row">
+            <span class="muted">Projection Method</span>
+            <select id="projMethod">
+              <option value="story">Story-based (Damodaran)</option>
+              <option value="mechanical">Mechanical (Editable table)</option>
+            </select>
+          </div>
+
+          <div class="grid-3" style="margin-top:10px;">
+            <div>
+              <p class="small" style="margin:0 0 6px;">Initial Rev Growth</p>
+              <input id="g0" type="number" step="0.1" value="6.0">
+            </div>
+            <div>
+              <p class="small" style="margin:0 0 6px;">Terminal Growth</p>
+              <input id="gT" type="number" step="0.1" value="2.5">
+            </div>
+            <div>
+              <p class="small" style="margin:0 0 6px;">Fade Shape</p>
+              <select id="gFade">
+                <option value="linear">Linear</option>
+                <option value="convex">Convex</option>
+                <option value="concave">Concave</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top:12px;">
+            <div>
+              <p class="small" style="margin:0 0 6px;">Current EBIT Margin</p>
+              <input id="m0" type="number" step="0.1" value="" placeholder="auto">
+            </div>
+            <div>
+              <p class="small" style="margin:0 0 6px;">Mature EBIT Margin</p>
+              <input id="mT" type="number" step="0.1" value="25.0">
+            </div>
+            <div>
+              <p class="small" style="margin:0 0 6px;">Margin Fade</p>
+              <select id="mFade">
+                <option value="exp">Exponential</option>
+                <option value="linear">Linear</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid-3" style="margin-top:12px;">
+            <div>
+              <p class="small" style="margin:0 0 6px;">Sales-to-Capital</p>
+              <input id="salesToCap" type="number" step="0.1" value="3.0">
+            </div>
+            <div>
+              <p class="small" style="margin:0 0 6px;">Terminal ROIC</p>
+              <input id="roicT" type="number" step="0.1" value="10.0">
+            </div>
+            <div>
+              <p class="small" style="margin:0 0 6px;">Tax Rate</p>
+              <input id="taxStory" type="number" step="0.1" value="" placeholder="auto">
+            </div>
+          </div>
+
+          <p class="hint">
+            Story mode forces <b>fade</b> (growth & margins) and links <b>growth → reinvestment</b> (ΔRevenue / Sales-to-Capital).
+            Stable year reinvestment rate uses <b>g/ROIC</b>.
+          </p>
+        </div>
+
+        <div class="mini-card">
+          <h3>Valuation Diagnostics</h3>
+          <div id="diagBox"><p class="muted">Load a ticker to see diagnostics…</p></div>
+          <p class="hint">
+            Checks r&gt;g, flags “high growth with tiny reinvestment,” and shows consistency gaps.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 1: Financials Table -->
     <div class="section-card">
       <h2>Income Statement & Free Cash Flow Build-Up</h2>
-      <div class="table-container" style="margin-top:0;">
-        <table id="dcfTable">
-          <thead>
-            <tr>
-              <th style="text-align:left;">Metric (in millions $)</th>
-              <th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th>
-              <th class="projection">2025</th>
-              <th class="projection">2026</th>
-              <th class="projection">2027</th>
-              <th class="projection">2028</th>
-              <th class="projection">2029</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
+
+      <!-- Annual -->
+      <div id="annualWrap" class="table-container" style="margin-top:0;">
+        <table id="dcfTableAnnual">
+          <thead id="annualHead"></thead>
+          <tbody id="annualBody"></tbody>
         </table>
+      </div>
+
+      <!-- Quarterly -->
+      <div id="quarterlyWrap" class="table-container" style="margin-top:0; display:none;">
+        <div class="small" style="margin-bottom:10px;">
+          Quarterly view is for transparency. Annual PV/terminal value still use annual FCFF (2025–2029).
+          Quarterly projections are <b>derived</b> from annual assumptions (seasonality).
+        </div>
+        <table id="dcfTableQuarterly">
+          <thead id="quarterlyHead"></thead>
+          <tbody id="quarterlyBody"></tbody>
+        </table>
+        <div id="quarterlyNotice" class="notice" style="display:none;"></div>
       </div>
     </div>
 
-    <!-- SECTION 2: Present Value Calculation (Kubera-style columns) -->
+    <!-- SECTION 2: PV -->
     <div class="section-card" id="valuationCard">
       <h2>Present Value Calculation</h2>
 
@@ -128,7 +281,7 @@
         <input id="valGrowth" type="number" step="0.1" value="2" style="padding:8px 10px;border:1px solid #ccc;border-radius:8px;width:90px;">
         <label style="display:flex;align-items:center;gap:6px; padding:6px 10px; border:1px solid #cfe3ff; border-radius:8px; background:#f6fbff;">
           <input id="midYearToggle" type="checkbox" checked>
-          Mid‑year convention
+          Mid-year convention
         </label>
         <button id="valRecalc" style="background:#007bff;color:#fff;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;">Recalculate</button>
       </div>
@@ -138,11 +291,7 @@
           <thead>
             <tr>
               <th style="text-align:left;">Metric</th>
-              <th>2025</th>
-              <th>2026</th>
-              <th>2027</th>
-              <th>2028</th>
-              <th>2029</th>
+              <th>2025</th><th>2026</th><th>2027</th><th>2028</th><th>2029</th>
               <th>Total</th>
             </tr>
           </thead>
@@ -150,66 +299,10 @@
         </table>
       </div>
 
-      <h2 style="font-family:'Inter',sans-serif;font-weight:700;font-size:28px;margin-top:26px;
-                 background:linear-gradient(90deg,#007bff,#00bfff);
-                 -webkit-background-clip:text;color:transparent;text-shadow:0 0 10px rgba(0,123,255,.3);">
-        Enterprise Value = <span id="evValue">$0</span>
-      </h2>
+      <h2 class="ev-head">Enterprise Value = <span id="evValue">$0</span></h2>
     </div>
 
-    <!-- Chart at bottom -->
     <canvas id="financialChart" width="1200" height="400"></canvas>
-
-    <!-- === FORMULAS APPENDIX (Dropdown) === -->
-    <section class="accordion-card" id="formulasAppendix">
-      <button class="accordion-header" type="button" aria-expanded="false" aria-controls="formulasPanel">
-        Formulas Appendix
-        <span class="chev">▾</span>
-      </button>
-
-      <div class="accordion-panel" id="formulasPanel">
-        <div class="formula-list" style="margin-top:12px;">
-          <h4>Gross Profit</h4>
-          <div class="math">\( \text{Gross Profit} = \text{Revenue} - \text{COGS} \)</div>
-
-          <h4>EBIT</h4>
-          <div class="math">\( \text{EBIT} = \text{Revenue} - \text{COGS} - \text{SG\&A} - \text{R\&D} \)</div>
-
-          <h4>NOPAT</h4>
-          <div class="math">\( \text{NOPAT} = \text{EBIT} - \text{Income Taxes} \)</div>
-
-          <h4>Free Cash Flow to Firm (FCFF)</h4>
-          <div class="math">\( \text{FCFF} = \text{NOPAT} + \text{D\&A} - \text{CapEx} - \Delta\text{WC} \)</div>
-
-          <h4>Reinvestment (Projection Build)</h4>
-          <div class="math">
-            \( \text{Reinvestment} = \text{D\&A} + \text{Other Non\!-\!Cash} + \Delta\text{WC} + \text{Deferred Tax} - \text{CapEx} + \text{Acquisitions}_{\text{net}} \)
-          </div>
-
-          <h4>FCFF (Reinvestment variant)</h4>
-          <div class="math">\( \text{FCFF(Reinv)} = \text{EBIT} - \text{Income Taxes} - \text{Reinvestment} \)</div>
-
-          <h4>PV Factor (End‑of‑Year)</h4>
-          <div class="math">\( \text{PVFactor}_t = \dfrac{1}{(1+r)^t} \)</div>
-
-          <h4>PV Factor (Mid‑Year Convention)</h4>
-          <div class="math">\( \text{PVFactor}^{\text{MYC}}_t = \dfrac{1}{(1+r)^{t-0.5}} \)</div>
-          <div class="formula-note">Interpretation: yearly cash flows are earned throughout the year, so we discount each \(t\) by half a year.</div>
-
-          <h4>Terminal Value (Gordon Growth)</h4>
-          <div class="math">\( \text{TV}_T = \dfrac{\text{FCFF}_T(1+g)}{r-g} \quad (r>g) \)</div>
-
-          <h4>Present Value of Terminal Value</h4>
-          <div class="math">End‑of‑Year: \( \dfrac{\text{TV}_T}{(1+r)^T} \) &nbsp; | &nbsp; Mid‑Year: \( \dfrac{\text{TV}_T}{(1+r)^{T-0.5}} \)</div>
-
-          <h4>Enterprise Value</h4>
-          <div class="math">
-            End‑of‑Year: \( \sum_{t=1}^{T} \dfrac{\text{FCFF}_t}{(1+r)^t} + \dfrac{\text{TV}_T}{(1+r)^T} \) <br/>
-            Mid‑Year: \( \sum_{t=1}^{T} \dfrac{\text{FCFF}_t}{(1+r)^{t-0.5}} + \dfrac{\text{TV}_T}{(1+r)^{T-0.5}} \)
-          </div>
-        </div>
-      </div>
-    </section>
   </div>
 
   <div id="drawer">
@@ -219,109 +312,290 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
+    // =========================
+    // Config
+    // =========================
     const API_BASE = 'http://localhost:3000';
-    const PROJ_GROWTH = 0.05;
-    let financialChart;
+    const PROJ_GROWTH_FALLBACK = 0.05;
 
+    // If API sends CapEx as NEGATIVE cash flow (common), keep true.
+    // If API sends CapEx as positive "spend", set false and we flip once at ingestion.
+    const CAPEX_IS_NEG_CASHFLOW = true;
+
+    // Quarter projection method:
+    // - derived: allocate annual projections into quarters using 2024 seasonal weights
+    // - flat: allocate evenly (25% each)
+    let quarterProjMethod = 'derived';
+
+    // View mode: annual vs quarterly
+    let viewMode = 'annual';
+
+    let financialChart;
+    window._annualChartData = null; // saved so we can rebuild annual chart after switching modes
+
+    // =========================
+    // Helpers
+    // =========================
     const parseNumber = (str) => parseFloat(String(str).replace(/,/g,'')) || 0;
     const formatNumber = (num) => Number(num).toLocaleString('en-US',{maximumFractionDigits:0});
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+
+    function normalizeCapex(val){
+      if (CAPEX_IS_NEG_CASHFLOW) return val;
+      return -Math.abs(val);
+    }
 
     function setTimingBadge(){
       const badge = document.getElementById('timingBadge');
       const on = document.getElementById('midYearToggle').checked;
-      badge.textContent = on ? 'Mid‑Year' : 'End‑of‑Year';
+      badge.textContent = on ? 'Mid-Year' : 'End-of-Year';
       badge.style.background = on ? '#eef6ff' : '#f6f6f6';
       badge.style.color = on ? '#0b63ce' : '#555';
       localStorage.setItem('dcf_midyear_enabled', on ? '1' : '0');
     }
 
-    function updateChartFromTable(){
-      if (!financialChart) return;
-      const rows = document.querySelectorAll('#dcfTable tbody tr');
-      const projCount = 5;
-      const total = financialChart.data.labels.length;
-
-      const getProj = (idx) => Array.from(rows[idx].cells).slice(-projCount).map(td => parseNumber(td.innerText));
-
-      const revProjRaw   = getProj(0);
-      const ebitProjRaw  = getProj(5);
-      const fcfProjRaw   = getProj(10);
-      const fcfReinvProj = getProj(12);
-
-      const hist2024Rev      = financialChart.data.datasets[0].data.slice(-1)[0];
-      const hist2024Ebit     = financialChart.data.datasets[1].data.slice(-1)[0];
-      const hist2024Fcf      = financialChart.data.datasets[2].data.slice(-1)[0];
-      const hist2024FcfReinv = financialChart.data.datasets[3].data.slice(-1)[0];
-
-      const revFull      = [hist2024Rev,      ...revProjRaw];
-      const ebitFull     = [hist2024Ebit,     ...ebitProjRaw];
-      const fcfFull      = [hist2024Fcf,      ...fcfProjRaw];
-      const fcfReinvFull = [hist2024FcfReinv, ...fcfReinvProj];
-
-      const padCount = total - revFull.length;
-      const pad = (cnt) => Array(Math.max(0,cnt)).fill(null);
-
-      financialChart.data.datasets[4].data = pad(padCount).concat(revFull);
-      financialChart.data.datasets[5].data = pad(padCount).concat(ebitFull);
-      financialChart.data.datasets[6].data = pad(padCount).concat(fcfFull);
-      financialChart.data.datasets[7].data = pad(padCount).concat(fcfReinvFull);
-
-      financialChart.update();
+    function setModePill(){
+      const on = document.getElementById('storyToggle').checked;
+      document.getElementById('modeText').textContent = on ? 'ON' : 'OFF';
     }
 
-    function updateDCF(){
-      const rows = document.querySelectorAll('#dcfTable tbody tr');
-      if (rows.length === 0) return;
+    function setViewButtons(){
+      document.getElementById('viewAnnualBtn').classList.toggle('active', viewMode === 'annual');
+      document.getElementById('viewQuarterlyBtn').classList.toggle('active', viewMode === 'quarterly');
+      document.getElementById('annualWrap').style.display = (viewMode === 'annual') ? 'block' : 'none';
+      document.getElementById('quarterlyWrap').style.display = (viewMode === 'quarterly') ? 'block' : 'none';
+    }
 
-      const rev   = Array.from(rows[0].cells).slice(1);
-      const cogs  = Array.from(rows[1].cells).slice(1);
-      const gp    = Array.from(rows[2].cells).slice(1);
-      const sga   = Array.from(rows[3].cells).slice(1);
-      const rnd   = Array.from(rows[4].cells).slice(1);
-      const ebit  = Array.from(rows[5].cells).slice(1);
-      const tax   = Array.from(rows[6].cells).slice(1);
-      const da    = Array.from(rows[7].cells).slice(1);
-      const capex = Array.from(rows[8].cells).slice(1);
-      const wc    = Array.from(rows[9].cells).slice(1);
-      const fcff  = Array.from(rows[10].cells).slice(1);
-      const reinv = Array.from(rows[11].cells).slice(1);
-      const fcffReinv = Array.from(rows[12].cells).slice(1);
+    function setQuarterProjButtons(){
+      document.getElementById('qProjDerivedBtn').classList.toggle('active', quarterProjMethod === 'derived');
+      document.getElementById('qProjFlatBtn').classList.toggle('active', quarterProjMethod === 'flat');
+    }
 
-      for (let i = 0; i < rev.length; i++){
-        const gpVal   = parseNumber(rev[i].innerText) - parseNumber(cogs[i].innerText);
-        const ebitVal = gpVal - parseNumber(sga[i].innerText) - parseNumber(rnd[i].innerText);
+    // Attempt to infer quarter from common fields. If not possible, return null.
+    function inferQuarter(row){
+      const q = row.calendar_quarter ?? row.quarter ?? row.fiscal_quarter ?? row.period;
+      if (q != null) {
+        const s = String(q).toUpperCase();
+        if (s.includes('Q1') || s === '1') return 1;
+        if (s.includes('Q2') || s === '2') return 2;
+        if (s.includes('Q3') || s === '3') return 3;
+        if (s.includes('Q4') || s === '4') return 4;
+      }
+      // Try dates
+      const d = row.date ?? row.filing_date ?? row.report_date ?? row.period_end ?? row.calendar_date;
+      if (d) {
+        const dt = new Date(d);
+        if (!isNaN(dt.getTime())) {
+          const m = dt.getUTCMonth() + 1;
+          if (m <= 3) return 1;
+          if (m <= 6) return 2;
+          if (m <= 9) return 3;
+          return 4;
+        }
+      }
+      return null;
+    }
 
-        gp[i].innerText   = formatNumber(gpVal);
+    // =========================
+    // Damodaran story functions
+    // =========================
+    function fadeGrowthPct(g0, gT, t, T, shape){
+      const x = clamp(t / T, 0, 1);
+      if (shape === 'convex') return g0 + (gT - g0) * (x*x);
+      if (shape === 'concave') return g0 + (gT - g0) * Math.sqrt(x);
+      return g0 + (gT - g0) * x; // linear
+    }
+
+    function fadeMarginPct(m0, mT, t, T, mode){
+      const x = clamp(t / T, 0, 1);
+      if (mode === 'exp') {
+        const tau = Math.max(1, T/2);
+        const k = 1 - Math.exp(-t / tau);
+        return m0 + (mT - m0) * k;
+      }
+      return m0 + (mT - m0) * x;
+    }
+
+    // =========================
+    // Rendering: Annual table
+    // =========================
+    function renderAnnualTableSkeleton(){
+      const head = document.getElementById('annualHead');
+      head.innerHTML = `
+        <tr>
+          <th style="text-align:left;">Metric (in millions $)</th>
+          <th>2020</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th>
+          <th class="projection">2025</th><th class="projection">2026</th><th class="projection">2027</th><th class="projection">2028</th><th class="projection">2029</th>
+        </tr>`;
+    }
+
+    function metricsList(){
+      return [
+        'Revenue','COGS','Gross Profit','SG&A','R&D',
+        'Operating Income (EBIT)','Income Tax','D&A','CapEx',
+        'Δ Working Capital','FCFF','Reinvestment','FCFF (Reinvestment)'
+      ];
+    }
+
+    function makeRow(tr, label, isBold){
+      if (isBold) tr.classList.add('bold-row');
+      const td0 = document.createElement('td');
+      td0.style.textAlign = 'left';
+      td0.innerText = label;
+      tr.appendChild(td0);
+      return tr;
+    }
+
+    // =========================
+    // Rendering: Quarterly table
+    // =========================
+    function renderQuarterlyTable(quarterlyData, quarterlyProj, noticeText){
+      const qHead = document.getElementById('quarterlyHead');
+      const qBody = document.getElementById('quarterlyBody');
+      const notice = document.getElementById('quarterlyNotice');
+
+      qHead.innerHTML = '';
+      qBody.innerHTML = '';
+
+      if (noticeText) {
+        notice.style.display = 'block';
+        notice.innerText = noticeText;
+      } else {
+        notice.style.display = 'none';
+        notice.innerText = '';
+      }
+
+      const histYears = [2020,2021,2022,2023,2024];
+      const projYears = [2025,2026,2027,2028,2029];
+
+      const trh = document.createElement('tr');
+      const th0 = document.createElement('th');
+      th0.style.textAlign = 'left';
+      th0.innerText = 'Metric (in millions $)';
+      trh.appendChild(th0);
+
+      function addYearCols(y, isProj){
+        for (let q=1;q<=4;q++){
+          const th = document.createElement('th');
+          th.innerText = `${y}Q${q}`;
+          if (isProj) th.classList.add('projection');
+          trh.appendChild(th);
+        }
+        const thT = document.createElement('th');
+        thT.innerText = `${y} Total`;
+        thT.classList.add('subtotal');
+        if (isProj) thT.classList.add('projection');
+        trh.appendChild(thT);
+      }
+
+      histYears.forEach(y => addYearCols(y,false));
+      projYears.forEach(y => addYearCols(y,true));
+      qHead.appendChild(trh);
+
+      const boldMetrics = new Set(['Gross Profit','Operating Income (EBIT)','FCFF','FCFF (Reinvestment)']);
+      const ms = metricsList();
+
+      ms.forEach(metric => {
+        const tr = document.createElement('tr');
+        if (boldMetrics.has(metric)) tr.classList.add('bold-row');
+
+        const td0 = document.createElement('td');
+        td0.style.textAlign = 'left';
+        td0.innerText = metric;
+        tr.appendChild(td0);
+
+        function appendYear(metricObj, y, isProj){
+          const arr = (metricObj?.[y] ?? [null,null,null,null]).map(v => (v==null? null : v));
+          const total = arr.reduce((a,b)=>a+(b||0),0);
+
+          for (let i=0;i<4;i++){
+            const td = document.createElement('td');
+            const v = arr[i];
+            td.innerText = (v==null) ? '-' : formatNumber(v);
+            if (isProj) td.classList.add('projection');
+            tr.appendChild(td);
+          }
+          const tdT = document.createElement('td');
+          tdT.classList.add('subtotal');
+          tdT.innerText = (arr.every(v=>v==null)) ? '-' : formatNumber(total);
+          if (isProj) tdT.classList.add('projection');
+          tr.appendChild(tdT);
+        }
+
+        [2020,2021,2022,2023,2024].forEach(y => appendYear(quarterlyData?.[metric], y, false));
+        [2025,2026,2027,2028,2029].forEach(y => appendYear(quarterlyProj?.[metric], y, true));
+
+        qBody.appendChild(tr);
+      });
+    }
+
+    // =========================
+    // Compute: dependent lines on annual table
+    // =========================
+    function getAnnualRowCells(metric){
+      const rows = document.querySelectorAll('#dcfTableAnnual tbody tr');
+      for (const r of rows){
+        if ((r.cells[0]?.innerText || '') === metric) {
+          return Array.from(r.cells).slice(1);
+        }
+      }
+      return null;
+    }
+
+    function updateAnnualComputedLines(){
+      const rev   = getAnnualRowCells('Revenue');
+      const cogs  = getAnnualRowCells('COGS');
+      const gp    = getAnnualRowCells('Gross Profit');
+      const sga   = getAnnualRowCells('SG&A');
+      const rnd   = getAnnualRowCells('R&D');
+      const ebit  = getAnnualRowCells('Operating Income (EBIT)');
+      const tax   = getAnnualRowCells('Income Tax');
+      const da    = getAnnualRowCells('D&A');
+      const capex = getAnnualRowCells('CapEx');
+      const wc    = getAnnualRowCells('Δ Working Capital');
+      const fcff  = getAnnualRowCells('FCFF');
+      const reinv = getAnnualRowCells('Reinvestment');
+      const fcffReinv = getAnnualRowCells('FCFF (Reinvestment)');
+
+      if (!rev) return;
+
+      for (let i=0;i<rev.length;i++){
+        const revVal = parseNumber(rev[i].innerText);
+        const cogsVal= parseNumber(cogs[i].innerText);
+        const sgaVal = parseNumber(sga[i].innerText);
+        const rndVal = parseNumber(rnd[i].innerText);
+        const taxVal = parseNumber(tax[i].innerText);
+        const daVal  = parseNumber(da[i].innerText);
+        const capVal = parseNumber(capex[i].innerText); // capex is negative cashflow
+        const wcVal  = parseNumber(wc[i].innerText);
+
+        const gpVal = revVal - cogsVal;
+        const ebitVal = gpVal - sgaVal - rndVal;
+
+        gp[i].innerText = formatNumber(gpVal);
         ebit[i].innerText = formatNumber(ebitVal);
 
-        // FCFF (classic): NOPAT + D&A - CapEx - ΔWC
-        const nopat   = ebitVal - parseNumber(tax[i].innerText);
-        const fcffVal = nopat + parseNumber(da[i].innerText) - parseNumber(capex[i].innerText) - parseNumber(wc[i].innerText);
+        // FCFF classic (CapEx as negative cashflow)
+        const nopat = ebitVal - taxVal;
+        const fcffVal = nopat + daVal + capVal - wcVal;
         fcff[i].innerText = formatNumber(fcffVal);
 
-        // Projection-only: Reinvestment & FCFF(Reinvestment)
-        const isProjection = (i >= 5);
+        // Reinvestment variant (projection columns only)
+        const isProjection = (i >= 5); // cols: 2020..2024 (0..4), 2025..2029 (5..9)
         if (isProjection){
           const other    = (window._carry?.other    ?? 0);
           const deferred = (window._carry?.deferred ?? 0);
           const acq      = (window._carry?.acq      ?? 0);
 
-          const reinvestmentVal =
-              parseNumber(da[i].innerText)
-            + other
-            + parseNumber(wc[i].innerText)
-            + deferred
-            - parseNumber(capex[i].innerText)
-            + acq;
-
+          const reinvestmentVal = daVal + other + wcVal + deferred + capVal + acq;
           reinv[i].innerText = formatNumber(reinvestmentVal);
 
-          const fcffReinvVal = ebitVal - parseNumber(tax[i].innerText) - reinvestmentVal;
+          const fcffReinvVal = ebitVal - taxVal - reinvestmentVal;
           fcffReinv[i].innerText = formatNumber(fcffReinvVal);
         }
       }
 
-      // Persist FCFF projections for PV section
+      // Persist annual projections for PV (we will overwrite in story mode with story FCFF)
       const projCount = 5;
       const fcffProj = fcff.slice(-projCount).map(td => parseNumber(td.innerText));
       const yearsProj = ['2025','2026','2027','2028','2029'];
@@ -329,15 +603,453 @@
       if (window._currentTicker){
         localStorage.setItem(
           `dcf_fcff_projection_${window._currentTicker}`,
-          JSON.stringify({ ticker: window._currentTicker, years: yearsProj, fcff: fcffProj })
+          JSON.stringify({ ticker: window._currentTicker, years: yearsProj, fcff: fcffProj, source:'annual-classic' })
         );
       }
 
-      updateChartFromTable();
       recalcValuation();
+      updateDiagnostics();
     }
 
-    async function renderChart(data){
+    function setAnnualProjectionEditability(isStory){
+      const editable = new Set(['Revenue','COGS','SG&A','R&D','Income Tax','D&A','CapEx','Δ Working Capital']);
+      const rows = document.querySelectorAll('#dcfTableAnnual tbody tr');
+
+      rows.forEach(row => {
+        const metric = row.cells[0]?.innerText || '';
+        const canEdit = editable.has(metric);
+        const cells = Array.from(row.cells);
+
+        for (let i=cells.length-5;i<cells.length;i++){
+          const td = cells[i];
+          if (!canEdit) continue;
+
+          if (isStory) {
+            td.contentEditable = false;
+            td.classList.add('locked');
+          } else {
+            td.contentEditable = true;
+            td.classList.remove('locked');
+          }
+        }
+      });
+    }
+
+    // =========================
+    // Story projection -> fills annual table projections + PV FCFF
+    // =========================
+    function applyStoryProjection(){
+      const isStory = document.getElementById('storyToggle').checked;
+      const method = document.getElementById('projMethod').value;
+      if (!isStory || method !== 'story') {
+        updateAnnualComputedLines();
+        return;
+      }
+
+      if (!window._histBase) return;
+
+      const base = window._histBase;
+      const years = [2025,2026,2027,2028,2029];
+      const T = years.length;
+
+      const g0 = parseFloat(document.getElementById('g0').value)/100;
+      const gT = parseFloat(document.getElementById('gT').value)/100;
+      const gFade = document.getElementById('gFade').value;
+
+      const m0Input = document.getElementById('m0').value;
+      const m0 = (m0Input === '' || isNaN(parseFloat(m0Input)))
+        ? (base.ebit / Math.max(1e-9, base.revenue))
+        : parseFloat(m0Input)/100;
+
+      const mT = parseFloat(document.getElementById('mT').value)/100;
+      const mFade = document.getElementById('mFade').value;
+
+      const stc = Math.max(0.1, parseFloat(document.getElementById('salesToCap').value) || 3.0);
+      const roicT = Math.max(0.1, parseFloat(document.getElementById('roicT').value) || 10.0) / 100;
+
+      const taxInput = document.getElementById('taxStory').value;
+      const taxRate = (taxInput === '' || isNaN(parseFloat(taxInput)))
+        ? base.taxRate
+        : parseFloat(taxInput)/100;
+
+      const cogsPct = base.cogs / Math.max(1e-9, base.revenue);
+      const sgaPct  = base.sga  / Math.max(1e-9, base.revenue);
+      const rndPct  = base.rnd  / Math.max(1e-9, base.revenue);
+
+      const wcPct = base.wc / Math.max(1e-9, base.revenue);
+      const daPct = base.da / Math.max(1e-9, base.revenue);
+      const capexPct = base.capex / Math.max(1e-9, base.revenue); // negative
+
+      const rev = [];
+      const ebit = [];
+      const taxes = [];
+      const da = [];
+      const capex = [];
+      const wc = [];
+
+      let prevRev = base.revenue;
+
+      for (let i=1;i<=T;i++){
+        const g = fadeGrowthPct(g0, gT, i, T, gFade);
+        const m = fadeMarginPct(m0, mT, i, T, mFade);
+
+        const r = prevRev * (1 + g);
+        const e = r * m;
+        const tx = e * taxRate;
+
+        const d = r * daPct;
+        const cx = r * capexPct;
+        const w = (r - prevRev) * wcPct;
+
+        rev.push(r); ebit.push(e); taxes.push(tx); da.push(d); capex.push(cx); wc.push(w);
+        prevRev = r;
+      }
+
+      const sgaVals = rev.map(r => r * sgaPct);
+      const rndVals = rev.map(r => r * rndPct);
+      const cogsVals = rev.map((r,i) => r - ebit[i] - sgaVals[i] - rndVals[i]);
+
+      function setRow(metric, values){
+        const cells = getAnnualRowCells(metric);
+        if (!cells) return;
+        const proj = cells.slice(-5);
+        proj.forEach((td,i)=> td.innerText = formatNumber(values[i]));
+      }
+
+      setRow('Revenue', rev);
+      setRow('SG&A', sgaVals);
+      setRow('R&D', rndVals);
+      setRow('COGS', cogsVals);
+      setRow('Income Tax', taxes);
+      setRow('D&A', da);
+      setRow('CapEx', capex);
+      setRow('Δ Working Capital', wc);
+
+      updateAnnualComputedLines();
+
+      const fcffStory = [];
+      let prev = base.revenue;
+      for (let i=0;i<T;i++){
+        const deltaRev = rev[i] - prev;
+        const reinvest = deltaRev / stc;
+        const nopat = ebit[i] * (1 - taxRate);
+        let fcff_i = nopat - reinvest;
+
+        if (i === T-1){
+          const rr = clamp((gT / roicT), 0, 1);
+          fcff_i = nopat * (1 - rr);
+        }
+
+        fcffStory.push(fcff_i);
+        prev = rev[i];
+      }
+
+      if (window._currentTicker){
+        localStorage.setItem(
+          `dcf_fcff_projection_${window._currentTicker}`,
+          JSON.stringify({ ticker: window._currentTicker, years: years.map(String), fcff: fcffStory, source:'story' })
+        );
+      }
+
+      recalcValuation();
+      updateDiagnostics();
+    }
+
+    // =========================
+    // Quarterly derivation from annual projections (transparency + chart)
+    // =========================
+    function computeSeasonalWeightsFrom2024(quarterlyHist){
+      const wFlat = [0.25,0.25,0.25,0.25];
+      if (!quarterlyHist?.Revenue?.[2024]) return wFlat;
+      const arr = quarterlyHist.Revenue[2024];
+      if (!arr || arr.some(v=>v==null)) return wFlat;
+      const total = arr.reduce((a,b)=>a+(b||0),0);
+      if (!total) return wFlat;
+      return arr.map(v => (v||0)/total);
+    }
+
+    function deriveQuarterlyFromAnnual(annualByMetric, weights){
+      const out = {};
+      for (const metric in annualByMetric){
+        out[metric] = {};
+        for (const yearStr in annualByMetric[metric]){
+          const y = Number(yearStr);
+          const val = annualByMetric[metric][y];
+          if (val == null) { out[metric][y] = [null,null,null,null]; continue; }
+
+          const w = (quarterProjMethod === 'flat') ? [0.25,0.25,0.25,0.25] : weights;
+
+          out[metric][y] = [ val*w[0], val*w[1], val*w[2], val*w[3] ];
+        }
+      }
+      return out;
+    }
+
+    function readAnnualTableAsNumbers(){
+      const rows = document.querySelectorAll('#dcfTableAnnual tbody tr');
+      const years = [2020,2021,2022,2023,2024,2025,2026,2027,2028,2029];
+      const obj = {};
+      rows.forEach(r=>{
+        const metric = r.cells[0]?.innerText || '';
+        obj[metric] = {};
+        for (let i=0;i<years.length;i++){
+          const td = r.cells[i+1];
+          const v = td ? parseNumber(td.innerText) : null;
+          obj[metric][years[i]] = (td && td.innerText !== '-' ? v : null);
+        }
+      });
+      return obj;
+    }
+
+    // =========================
+    // Diagnostics
+    // =========================
+    function updateDiagnostics(){
+      const box = document.getElementById('diagBox');
+      if (!box || !window._histBase) return;
+
+      const r = parseFloat(document.getElementById('valRate').value)/100;
+      const g = parseFloat(document.getElementById('valGrowth').value)/100;
+
+      const storyOn = document.getElementById('storyToggle').checked;
+      const method = document.getElementById('projMethod').value;
+
+      const base = window._histBase;
+      const m0 = (base.ebit / Math.max(1e-9, base.revenue));
+      const baseMargin = (m0*100).toFixed(1);
+
+      let lines = `
+        <div class="row"><span>Mode</span><b>${storyOn ? '<span class="ok">Story Mode: ON</span>' : '<span class="muted">Story Mode: OFF</span>'}</b></div>
+        <div class="row"><span>2024 EBIT Margin (auto)</span><b>${baseMargin}%</b></div>
+        <div class="row"><span>Discount Rate (r)</span><b>${(r*100).toFixed(2)}%</b></div>
+        <div class="row"><span>Terminal Growth (g)</span><b>${(g*100).toFixed(2)}%</b></div>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:12px 0;" />
+      `;
+
+      if (!(r > g)) {
+        lines += `<p class="warn"><b>Terminal flag:</b> need r &gt; g for a finite terminal value.</p>`;
+      } else {
+        lines += `<p class="ok"><b>Terminal check:</b> r &gt; g ✅</p>`;
+      }
+
+      if (storyOn && method === 'story') {
+        const g0 = parseFloat(document.getElementById('g0').value)/100;
+        const gT = parseFloat(document.getElementById('gT').value)/100;
+        const stc = Math.max(0.1, parseFloat(document.getElementById('salesToCap').value) || 3.0);
+        const roicT = Math.max(0.1, parseFloat(document.getElementById('roicT').value) || 10.0) / 100;
+
+        const g1 = fadeGrowthPct(g0, gT, 1, 5, document.getElementById('gFade').value);
+        const rev1 = base.revenue * (1 + g1);
+        const reinv1 = (rev1 - base.revenue) / stc;
+
+        const impliedGrowth = (reinv1 / Math.max(1e-9, (base.ebit*(1-base.taxRate)))) * roicT;
+        const gap = (g1 - impliedGrowth) * 100;
+
+        lines += `
+          <div class="row"><span>Year 1 Assumed Growth</span><b>${(g1*100).toFixed(2)}%</b></div>
+          <div class="row"><span>Implied Growth (ReinvRate × ROIC)</span><b>${(impliedGrowth*100).toFixed(2)}%</b></div>
+          <div class="row"><span>Gap</span><b class="${Math.abs(gap)>2 ? 'warn':'ok'}">${gap.toFixed(2)}%</b></div>
+          ${Math.abs(gap)>2
+            ? `<p class="warn"><b>Discipline flag:</b> growth is not supported by reinvestment/capital efficiency. Adjust Sales-to-Capital, ROIC, or growth path.</p>`
+            : `<p class="ok"><b>Consistency:</b> growth broadly supported by reinvestment and ROIC.</p>`
+          }
+        `;
+      } else {
+        lines += `<p class="muted">Implied growth checks show strongest value in Story Mode.</p>`;
+      }
+
+      box.innerHTML = lines;
+    }
+
+    // =========================
+    // PV / EV
+    // =========================
+    function recalcValuation(){
+      const ticker = window._currentTicker;
+      const stored = ticker ? localStorage.getItem(`dcf_fcff_projection_${ticker}`) : null;
+
+      const pvBody = document.getElementById('pvBody');
+      const evElem = document.getElementById('evValue');
+      const evElemTop = document.getElementById('evValueTop');
+
+      const fmt = (n) => (n == null || isNaN(n)) ? '-' : Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
+      const rowHtml = (label, arr, total=null) => {
+        const t = (total==null) ? '' : fmt(total);
+        return `
+          <tr${label==='Discounted Cash Flows' || label==='Present Value of Terminal Value' ? ' class="bold-row"' : ''}>
+            <td style="text-align:left;">${label}</td>
+            <td>${fmt(arr[0])}</td>
+            <td>${fmt(arr[1])}</td>
+            <td>${fmt(arr[2])}</td>
+            <td>${fmt(arr[3])}</td>
+            <td>${fmt(arr[4])}</td>
+            <td>${t}</td>
+          </tr>`;
+      };
+
+      if(!stored){
+        pvBody.innerHTML = '';
+        evElem.innerText = '$0';
+        if (evElemTop) evElemTop.innerText = '$0';
+        return;
+      }
+
+      const parsed = JSON.parse(stored) || {};
+      const fcff = parsed.fcff;
+      if (!fcff || fcff.length !== 5){
+        pvBody.innerHTML = '';
+        evElem.innerText = '$0';
+        if (evElemTop) evElemTop.innerText = '$0';
+        return;
+      }
+
+      const r = parseFloat(document.getElementById('valRate').value)/100;
+      const g = parseFloat(document.getElementById('valGrowth').value)/100;
+      const useMidYear = document.getElementById('midYearToggle').checked;
+
+      if (!(r > g)) {
+        pvBody.innerHTML = `
+          <tr>
+            <td style="text-align:left;color:#b91c1c;font-weight:800;">Invalid inputs: discount rate must be greater than growth rate (r &gt; g).</td>
+            <td colspan="6"></td>
+          </tr>`;
+        evElem.innerText = '$0';
+        if (evElemTop) evElemTop.innerText = '$0';
+        updateDiagnostics();
+        return;
+      }
+
+      const t = fcff.map((_,i)=>i+1);
+      const effectivePeriods = t.map(v => useMidYear ? (v - 0.5) : v);
+      const pvFactors = effectivePeriods.map(v => 1/Math.pow(1+r, v));
+      const discounted = fcff.map((cf,i) => cf * pvFactors[i]);
+      const sumPV = discounted.reduce((a,b)=>a+b,0);
+
+      const lastFCFF = fcff[fcff.length-1];
+      const tv = lastFCFF * (1 + g) / (r - g);
+
+      const tvFactor = 1/Math.pow(1+r, useMidYear ? (t[t.length-1] - 0.5) : t[t.length-1]);
+      const pvTV = tv * tvFactor;
+
+      const ev = sumPV + pvTV;
+
+      const blank = [null,null,null,null,null];
+      const timePeriodsArr = effectivePeriods.map(v => Number(v.toFixed(1)));
+      const pvFactorsArr   = pvFactors.map(v => Number.isFinite(v) ? Number(v.toFixed(3)) : null);
+
+      const tvArr          = blank.slice();      tvArr[4] = tv;
+      const tvFactorArr    = blank.slice();      tvFactorArr[4] = Number(tvFactor.toFixed(3));
+      const pvTvArr        = blank.slice();      pvTvArr[4] = pvTV;
+
+      pvBody.innerHTML = [
+        rowHtml('Unlevered Free Cash Flow', fcff, null),
+        rowHtml('Time Period (years)', timePeriodsArr, null),
+        rowHtml('Present Value Factor', pvFactorsArr, null),
+        rowHtml('Discounted Cash Flows', discounted, sumPV),
+        rowHtml('Terminal Value', tvArr, tv),
+        rowHtml('PV Factor (for TV)', tvFactorArr, tvFactor),
+        rowHtml('Present Value of Terminal Value', pvTvArr, pvTV),
+        `<tr class="bold-row">
+           <td style="text-align:left;">Enterprise Value</td>
+           <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
+           <td>${fmt(ev)}</td>
+         </tr>`
+      ].join('');
+
+      evElem.innerText = '$' + ev.toLocaleString('en-US',{maximumFractionDigits:0});
+      if (evElemTop) evElemTop.innerText = '$' + ev.toLocaleString('en-US',{maximumFractionDigits:0});
+
+      setTimingBadge();
+      updateDiagnostics();
+    }
+
+    // =========================
+    // Chart helpers (NEW)
+    // =========================
+    function buildQuarterLabels(){
+      const labels = [];
+      for (let y=2020; y<=2029; y++){
+        for (let q=1; q<=4; q++){
+          labels.push(`${y}Q${q}`);
+        }
+      }
+      return labels;
+    }
+
+    function flattenQuarterSeries(metricObj, years){
+      const out = [];
+      years.forEach(y=>{
+        const arr = metricObj?.[y] ?? [null,null,null,null];
+        for (let i=0;i<4;i++) out.push(arr[i] ?? null);
+      });
+      return out;
+    }
+
+    function padNulls(n){ return Array(Math.max(0,n)).fill(null); }
+
+    function buildQuarterlyChartPayload(){
+      const qHist = window._quarterlyHist;
+
+      const annualNums = readAnnualTableAsNumbers();
+      const annualProjByMetric = {};
+      for (const metric of metricsList()){
+        annualProjByMetric[metric] = {};
+        for (const y of [2025,2026,2027,2028,2029]){
+          annualProjByMetric[metric][y] = annualNums?.[metric]?.[y] ?? null;
+        }
+      }
+
+      const hasQuarterly = !!(qHist?.Revenue?.[2024] && qHist.Revenue[2024].some(v => v != null));
+      const weights = (hasQuarterly && quarterProjMethod === 'derived')
+        ? computeSeasonalWeightsFrom2024(qHist)
+        : [0.25,0.25,0.25,0.25];
+
+      const qProj = deriveQuarterlyFromAnnual(annualProjByMetric, weights);
+
+      const histYears = [2020,2021,2022,2023,2024];
+      const projYears = [2025,2026,2027,2028,2029];
+
+      const histRev  = flattenQuarterSeries(qHist?.Revenue, histYears);
+      const histEbit = flattenQuarterSeries(qHist?.['Operating Income (EBIT)'], histYears);
+      const histFcf  = flattenQuarterSeries(qHist?.FCFF, histYears);
+      const histFcfR = flattenQuarterSeries(qHist?.['FCFF (Reinvestment)'], histYears);
+
+      const projRev  = flattenQuarterSeries(qProj?.Revenue, projYears);
+      const projEbit = flattenQuarterSeries(qProj?.['Operating Income (EBIT)'], projYears);
+      const projFcf  = flattenQuarterSeries(qProj?.FCFF, projYears);
+      const projFcfR = flattenQuarterSeries(qProj?.['FCFF (Reinvestment)'], projYears);
+
+      const totalQuarters = 10 * 4; // 2020..2029
+      const histQuarters  = 5 * 4;  // 2020..2024
+      const projQuarters  = 5 * 4;  // 2025..2029
+      const anchorIdx = histQuarters - 1; // 2024Q4
+
+      function projectedWithAnchor(histSeries, projSeries){
+        const out = padNulls(totalQuarters);
+        const anchor = histSeries?.[anchorIdx] ?? null;
+        out[anchorIdx] = anchor;
+        for (let i=0;i<projQuarters;i++){
+          out[anchorIdx + 1 + i] = projSeries?.[i] ?? null;
+        }
+        return out;
+      }
+
+      return {
+        labels: buildQuarterLabels(),
+        hist: { rev: histRev, ebit: histEbit, fcf: histFcf, fcfR: histFcfR },
+        proj: {
+          rev:  projectedWithAnchor(histRev,  projRev),
+          ebit: projectedWithAnchor(histEbit, projEbit),
+          fcf:  projectedWithAnchor(histFcf,  projFcf),
+          fcfR: projectedWithAnchor(histFcfR, projFcfR),
+        }
+      };
+    }
+
+    // =========================
+    // Chart (annual + quarterly)
+    // =========================
+    async function renderChartAnnual(data){
       const ctx = document.getElementById('financialChart').getContext('2d');
       if (financialChart) financialChart.destroy();
 
@@ -365,253 +1077,422 @@
         },
         options:{
           responsive:true,
-          plugins:{ legend:{ position:'top' }, title:{ display:true, text:'Historical + Projected Financials' } },
+          plugins:{ legend:{ position:'top' }, title:{ display:true, text:'Historical + Projected Financials (Annual)' } },
           interaction:{ mode:'nearest', axis:'x', intersect:false },
           scales:{ y:{ beginAtZero:true, title:{ display:true, text:'Millions USD' } }, x:{ title:{ display:true, text:'Fiscal Year' } } }
         }
       });
+
+      // After annual chart is built, populate dashed projected lines from annual table
+      updateChartFromAnnualTable();
     }
 
+    function renderChartQuarterly(){
+      const ctx = document.getElementById('financialChart').getContext('2d');
+      if (financialChart) financialChart.destroy();
+
+      const payload = buildQuarterlyChartPayload();
+
+      financialChart = new Chart(ctx, {
+        type:'line',
+        data:{
+          labels: payload.labels,
+          datasets:[
+            { label:'Revenue (Historical)', data: payload.hist.rev,  borderColor:'#007bff', fill:false, tension:.25 },
+            { label:'EBIT (Historical)',    data: payload.hist.ebit, borderColor:'#28a745', fill:false, tension:.25 },
+            { label:'FCFF (Historical)',    data: payload.hist.fcf,  borderColor:'#ffc107', fill:false, tension:.25 },
+            { label:'FCFF (Reinvestment) (Historical)', data: payload.hist.fcfR, borderColor:'#dc3545', fill:false, tension:.25 },
+
+            { label:'Revenue (Projected)',  data: payload.proj.rev,  borderColor:'#007bff', borderDash:[5,5], fill:false, tension:.25 },
+            { label:'EBIT (Projected)',     data: payload.proj.ebit, borderColor:'#28a745', borderDash:[5,5], fill:false, tension:.25 },
+            { label:'FCFF (Projected)',     data: payload.proj.fcf,  borderColor:'#ffc107', borderDash:[5,5], fill:false, tension:.25 },
+            { label:'FCFF (Reinvestment) (Projected)', data: payload.proj.fcfR, borderColor:'#dc3545', borderDash:[5,5], fill:false, tension:.25 },
+          ]
+        },
+        options:{
+          responsive:true,
+          plugins:{ legend:{ position:'top' }, title:{ display:true, text:'Historical + Projected Financials (Quarterly)' } },
+          interaction:{ mode:'nearest', axis:'x', intersect:false },
+          scales:{
+            y:{ beginAtZero:true, title:{ display:true, text:'Millions USD' } },
+            x:{
+              title:{ display:true, text:'Fiscal Quarter' },
+              ticks:{ maxRotation: 0, autoSkip: true, maxTicksLimit: 16 }
+            }
+          }
+        }
+      });
+    }
+
+    function rebuildChartForCurrentView(){
+      if (viewMode === 'quarterly') {
+        renderChartQuarterly();
+      } else {
+        if (window._annualChartData) renderChartAnnual(window._annualChartData);
+      }
+    }
+
+    function refreshChartIfNeeded(){
+      // call this after any table/story change
+      if (viewMode === 'quarterly') renderChartQuarterly();
+      else updateChartFromAnnualTable();
+    }
+
+    function updateChartFromAnnualTable(){
+      if (!financialChart) return;
+      if (viewMode !== 'annual') return; // only applies to annual chart
+
+      const years = [2020,2021,2022,2023,2024,2025,2026,2027,2028,2029];
+      const read = readAnnualTableAsNumbers();
+
+      const rev = years.map(y => read['Revenue']?.[y] ?? null);
+      const ebit= years.map(y => read['Operating Income (EBIT)']?.[y] ?? null);
+      const fcf = years.map(y => read['FCFF']?.[y] ?? null);
+      const fcfR= years.map(y => read['FCFF (Reinvestment)']?.[y] ?? null);
+
+      const hist2024Rev = rev[4];
+      const hist2024Ebit = ebit[4];
+      const hist2024Fcf = fcf[4];
+      const hist2024FcfR = fcfR[4];
+
+      const projRev = [hist2024Rev, ...rev.slice(5)];
+      const projEbit= [hist2024Ebit,...ebit.slice(5)];
+      const projFcf = [hist2024Fcf, ...fcf.slice(5)];
+      const projFcfR= [hist2024FcfR,...fcfR.slice(5)];
+
+      const padCount = 10 - projRev.length; // 10-6=4
+      const pad = Array(Math.max(0,padCount)).fill(null);
+
+      // datasets indices for annual chart
+      financialChart.data.datasets[4].data = pad.concat(projRev);
+      financialChart.data.datasets[5].data = pad.concat(projEbit);
+      financialChart.data.datasets[6].data = pad.concat(projFcf);
+      financialChart.data.datasets[7].data = pad.concat(projFcfR);
+
+      financialChart.update();
+    }
+
+    // =========================
+    // Data: Fetch & Build annual + quarterly structures
+    // =========================
     async function populateHistoricalData(ticker){
-      try{
-        const res = await fetch(`${API_BASE}/filtered-financials?company=${ticker}`);
-        if (!res.ok) throw new Error(res.statusText);
-        const raw = await res.json();
+      const res = await fetch(`${API_BASE}/filtered-financials?company=${ticker}`);
+      if (!res.ok) throw new Error(res.statusText);
+      const raw = await res.json();
 
-        const grouped = {};
-        raw.forEach(row => {
-          const y = row.calendar_year;
-          if (!grouped[y]) grouped[y] = { revenue:0,cogs:0,sga:0,rnd:0,da:0,capex:0,wc:0,tax:0,other:0,deferred:0,acq:0 };
-          grouped[y].revenue  += (row.revenue||0)/1e6;
-          grouped[y].cogs     += (row.cogs   ||0)/1e6;
-          grouped[y].sga      += (row.sga    ||0)/1e6;
-          grouped[y].rnd      += (row.rnd    ||0)/1e6;
-          grouped[y].da       += (row.da     ||0)/1e6;
-          grouped[y].capex    += (row.capex  ||0)/1e6;
-          grouped[y].wc       += (row.wc     ||0)/1e6;
-          grouped[y].other    += (row.other_non_cash_items ||0)/1e6;
-          grouped[y].deferred += (row.deferred_income_tax  ||0)/1e6;
-          grouped[y].acq      += (row.acquisitions_net     ||0)/1e6;
-          grouped[y].tax      += (row.tax    ||0)/1e6;
+      const annual = {};
+      const quarterly = {};
+      raw.forEach(row => {
+        const y = Number(row.calendar_year);
+        if (!annual[y]) annual[y] = { revenue:0,cogs:0,sga:0,rnd:0,da:0,capex:0,wc:0,tax:0,other:0,deferred:0,acq:0 };
+        annual[y].revenue  += (row.revenue||0)/1e6;
+        annual[y].cogs     += (row.cogs   ||0)/1e6;
+        annual[y].sga      += (row.sga    ||0)/1e6;
+        annual[y].rnd      += (row.rnd    ||0)/1e6;
+        annual[y].da       += (row.da     ||0)/1e6;
+        annual[y].capex    += normalizeCapex((row.capex||0)/1e6);
+        annual[y].wc       += (row.wc     ||0)/1e6;
+        annual[y].tax      += (row.tax    ||0)/1e6;
+        annual[y].other    += (row.other_non_cash_items ||0)/1e6;
+        annual[y].deferred += (row.deferred_income_tax  ||0)/1e6;
+        annual[y].acq      += (row.acquisitions_net     ||0)/1e6;
+
+        const q = inferQuarter(row);
+        if (q != null) {
+          if (!quarterly[y]) quarterly[y] = {};
+          if (!quarterly[y][q]) quarterly[y][q] = { revenue:0,cogs:0,sga:0,rnd:0,da:0,capex:0,wc:0,tax:0,other:0,deferred:0,acq:0 };
+          const b = quarterly[y][q];
+          b.revenue  += (row.revenue||0)/1e6;
+          b.cogs     += (row.cogs   ||0)/1e6;
+          b.sga      += (row.sga    ||0)/1e6;
+          b.rnd      += (row.rnd    ||0)/1e6;
+          b.da       += (row.da     ||0)/1e6;
+          b.capex    += normalizeCapex((row.capex||0)/1e6);
+          b.wc       += (row.wc     ||0)/1e6;
+          b.tax      += (row.tax    ||0)/1e6;
+          b.other    += (row.other_non_cash_items ||0)/1e6;
+          b.deferred += (row.deferred_income_tax  ||0)/1e6;
+          b.acq      += (row.acquisitions_net     ||0)/1e6;
+        }
+      });
+
+      const lastYear = 2024;
+      window._carry = {
+        other:    (annual[lastYear]?.other    ?? 0),
+        deferred: (annual[lastYear]?.deferred ?? 0),
+        acq:      (annual[lastYear]?.acq      ?? 0)
+      };
+
+      const b = annual[lastYear] || { revenue:0,cogs:0,sga:0,rnd:0,da:0,capex:0,wc:0,tax:0 };
+      const baseEbit = (b.revenue - b.cogs - b.sga - b.rnd);
+      const baseTaxRate = (baseEbit !== 0) ? clamp(b.tax / baseEbit, 0, 0.5) : 0.21;
+
+      window._histBase = {
+        revenue: b.revenue,
+        cogs: b.cogs,
+        sga: b.sga,
+        rnd: b.rnd,
+        da: b.da,
+        capex: b.capex,
+        wc: b.wc,
+        tax: b.tax,
+        ebit: baseEbit,
+        taxRate: baseTaxRate
+      };
+
+      const m0El = document.getElementById('m0');
+      const taxEl = document.getElementById('taxStory');
+      if (m0El && (m0El.value === '' || m0El.value == null)) {
+        const m0 = (window._histBase.ebit / Math.max(1e-9, window._histBase.revenue)) * 100;
+        m0El.value = Number(m0.toFixed(1));
+      }
+      if (taxEl && (taxEl.value === '' || taxEl.value == null)) {
+        taxEl.value = Number((window._histBase.taxRate*100).toFixed(1));
+      }
+
+      renderAnnualTableSkeleton();
+      const tbody = document.getElementById('annualBody');
+      tbody.innerHTML = '';
+
+      const chartData = { labels: ['2020','2021','2022','2023','2024'], revenue:[], ebit:[], fcff:[], fcff_reinvestment:[] };
+      window._annualChartData = chartData;
+
+      const yearsHist = [2020,2021,2022,2023,2024];
+      const metrics = metricsList();
+      const boldMetrics = new Set(['Gross Profit','Operating Income (EBIT)','FCFF','FCFF (Reinvestment)']);
+
+      metrics.forEach(metric => {
+        const tr = document.createElement('tr');
+        if (boldMetrics.has(metric)) tr.classList.add('bold-row');
+        makeRow(tr, metric, false);
+
+        yearsHist.forEach(y => {
+          const td = document.createElement('td');
+          let val = '-';
+          const g = annual[y];
+          if (g){
+            switch(metric){
+              case 'Revenue': val = g.revenue; chartData.revenue.push(val); break;
+              case 'COGS': val = g.cogs; break;
+              case 'Gross Profit': val = g.revenue - g.cogs; break;
+              case 'SG&A': val = g.sga; break;
+              case 'R&D': val = g.rnd; break;
+              case 'Operating Income (EBIT)': {
+                const e = g.revenue - g.cogs - g.sga - g.rnd;
+                val = e; chartData.ebit.push(val); break;
+              }
+              case 'Income Tax': val = g.tax; break;
+              case 'D&A': val = g.da; break;
+              case 'CapEx': val = g.capex; break;
+              case 'Δ Working Capital': val = g.wc; break;
+              case 'FCFF': {
+                const e = g.revenue - g.cogs - g.sga - g.rnd;
+                const np = e - g.tax;
+                val = np + g.da + g.capex - g.wc;
+                chartData.fcff.push(val);
+                break;
+              }
+              case 'Reinvestment': {
+                val = g.da + g.other + g.wc + g.deferred + g.capex + g.acq;
+                break;
+              }
+              case 'FCFF (Reinvestment)': {
+                const e = g.revenue - g.cogs - g.sga - g.rnd;
+                const reinv = g.da + g.other + g.wc + g.deferred + g.capex + g.acq;
+                val = e - g.tax - reinv;
+                chartData.fcff_reinvestment.push(val);
+                break;
+              }
+            }
+          }
+          td.innerText = (typeof val === 'number') ? formatNumber(val) : val;
+          tr.appendChild(td);
         });
-
-        const years = [2020,2021,2022,2023,2024];
-        const lastYear = years[years.length-1];
-
-        // carry-forward used in projections for reinvestment build
-        window._carry = {
-          other:    (grouped[lastYear]?.other    ?? 0),
-          deferred: (grouped[lastYear]?.deferred ?? 0),
-          acq:      (grouped[lastYear]?.acq      ?? 0)
-        };
 
         const keyMap = {
           'Revenue':'revenue','COGS':'cogs','SG&A':'sga','R&D':'rnd',
           'Income Tax':'tax','D&A':'da','CapEx':'capex','Δ Working Capital':'wc'
         };
 
-        const metrics = [
-          'Revenue','COGS','Gross Profit','SG&A','R&D',
-          'Operating Income (EBIT)','Income Tax','D&A','CapEx',
-          'Δ Working Capital','FCFF','Reinvestment','FCFF (Reinvestment)'
-        ];
+        for (let i=0;i<5;i++){
+          const td = document.createElement('td');
+          td.classList.add('projection');
 
-        const tbody = document.querySelector('#dcfTable tbody');
-        tbody.innerHTML = '';
+          if (keyMap[metric]){
+            td.contentEditable = true;
+            const baseVal = annual[2024] ? annual[2024][keyMap[metric]] : 0;
+            const projVal = baseVal * Math.pow(1 + PROJ_GROWTH_FALLBACK, i + 1);
+            td.innerText = formatNumber(projVal);
 
-        const chartData = { labels: years.map(String), revenue:[], ebit:[], fcff:[], fcff_reinvestment:[] };
-
-        metrics.forEach(metric => {
-          const row = document.createElement('tr');
-          if (['Gross Profit','Operating Income (EBIT)','FCFF','FCFF (Reinvestment)'].includes(metric)) {
-            row.classList.add('bold-row');
+            td.addEventListener('input', () => {
+              updateAnnualComputedLines();
+              refreshChartIfNeeded();
+              refreshQuarterlyFromAnnualIfVisible();
+            });
+            td.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); td.blur(); } });
+          } else {
+            td.innerText = '-';
           }
+          tr.appendChild(td);
+        }
 
-          const labelCell = document.createElement('td');
-          labelCell.innerText = metric;
-          labelCell.style.textAlign = 'left';
-          row.appendChild(labelCell);
+        tbody.appendChild(tr);
+      });
 
-          years.forEach(y => {
-            const td = document.createElement('td');
-            let val = '-';
-            if (grouped[y]){
-              const g = grouped[y];
-              switch(metric){
-                case 'Revenue': val=g.revenue; chartData.revenue.push(val); break;
-                case 'COGS': val=g.cogs; break;
-                case 'Gross Profit': val=g.revenue - g.cogs; break;
-                case 'SG&A': val=g.sga; break;
-                case 'R&D': val=g.rnd; break;
-                case 'Operating Income (EBIT)': {
-                  const ebit=g.revenue - g.cogs - g.sga - g.rnd; val=ebit; chartData.ebit.push(val); break;
-                }
-                case 'Income Tax': val=g.tax; break;
-                case 'D&A': val=g.da; break;
-                case 'CapEx': val=g.capex; break;
-                case 'Δ Working Capital': val=g.wc; break;
-                case 'Reinvestment': {
-                  const reinv=g.da + g.other + g.wc + g.deferred - g.capex + g.acq; val=reinv; break;
-                }
-                case 'FCFF': {
-                  const e=g.revenue - g.cogs - g.sga - g.rnd; const np=e - g.tax;
-                  /* FCFF classic: NOPAT + D&A - CapEx - ΔWC */
-                  val=np + g.da - g.capex - g.wc; chartData.fcff.push(val); break;
-                }
-                case 'FCFF (Reinvestment)': {
-                  const ebit=g.revenue - g.cogs - g.sga - g.rnd;
-                  const reinv=g.da + g.other + g.wc + g.deferred - g.capex + g.acq;
-                  val=ebit - g.tax - reinv; chartData.fcff_reinvestment.push(val); break;
-                }
-              }
-            }
-            td.innerText = (typeof val === 'number') ? formatNumber(val) : val;
-            row.appendChild(td);
-          });
+      // Build initial chart respecting viewMode
+      rebuildChartForCurrentView();
 
-          // Projections (2025..2029)
-          for (let i = 0; i < 5; i++){
-            const td = document.createElement('td');
-            td.classList.add('projection');
+      const storyPref = localStorage.getItem('dcf_story_enabled');
+      if (storyPref !== null) document.getElementById('storyToggle').checked = (storyPref === '1');
+      setModePill();
+      setAnnualProjectionEditability(document.getElementById('storyToggle').checked);
 
-            if (keyMap[metric]){
-              td.contentEditable = true;
-              const baseVal = grouped[lastYear] ? grouped[lastYear][keyMap[metric]] : 0;
-              const projVal = baseVal * Math.pow(1 + PROJ_GROWTH, i + 1);
-              td.innerText = formatNumber(projVal);
-              td.addEventListener('input', updateDCF);
-              td.addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); updateDCF(); } });
-            } else {
-              td.innerText = '-';
-            }
-            row.appendChild(td);
-          }
+      applyStoryProjection();
+      updateAnnualComputedLines();
+      refreshChartIfNeeded();
 
-          tbody.appendChild(row);
+      window._quarterlyHist = buildQuarterlyMetricObject(quarterly);
+      refreshQuarterlyFromAnnualIfVisible();
+      // If user is in quarterly view, ensure chart reflects latest derived quarters
+      if (viewMode === 'quarterly') renderChartQuarterly();
+    }
+
+    function buildQuarterlyMetricObject(quarterly){
+      const out = {};
+      metricsList().forEach(m => out[m] = {});
+      const years = [2020,2021,2022,2023,2024];
+
+      function getQArrForBase(metric, y){
+        const qs = [1,2,3,4].map(q => quarterly?.[y]?.[q] || null);
+        const mapBase = (k) => qs.map(obj => obj ? obj[k] : null);
+
+        const revenue = mapBase('revenue');
+        const cogs    = mapBase('cogs');
+        const sga     = mapBase('sga');
+        const rnd     = mapBase('rnd');
+        const tax     = mapBase('tax');
+        const da      = mapBase('da');
+        const capex   = mapBase('capex');
+        const wc      = mapBase('wc');
+        const other   = mapBase('other');
+        const deferred= mapBase('deferred');
+        const acq     = mapBase('acq');
+
+        const gp = revenue.map((v,i)=> (v==null||cogs[i]==null) ? null : (v - cogs[i]));
+        const ebit = gp.map((v,i)=> (v==null||sga[i]==null||rnd[i]==null) ? null : (v - sga[i] - rnd[i]));
+        const reinv = da.map((v,i)=>{
+          if (v==null) return null;
+          const o=other[i]??0, d=deferred[i]??0, w=wc[i]??0, c=capex[i]??0, a=acq[i]??0;
+          return v + o + w + d + c + a;
+        });
+        const fcff = ebit.map((e,i)=>{
+          if (e==null) return null;
+          const np = e - (tax[i]??0);
+          return np + (da[i]??0) + (capex[i]??0) - (wc[i]??0);
+        });
+        const fcffR = ebit.map((e,i)=>{
+          if (e==null) return null;
+          return e - (tax[i]??0) - (reinv[i]??0);
         });
 
-        await renderChart(chartData);
-        updateDCF();
-      } catch (e){
-        console.error('Error fetching financials:', e);
-      }
-    }
-
-    // === DCF Valuation Summary (LocalStorage Option, column layout) ===
-    function recalcValuation(){
-      const ticker = window._currentTicker;
-      const stored = ticker ? localStorage.getItem(`dcf_fcff_projection_${ticker}`) : null;
-
-      const pvBody = document.getElementById('pvBody');
-      const evElem = document.getElementById('evValue');
-
-      const fmt = (n) => (n == null || isNaN(n)) ? '-' : Number(n).toLocaleString('en-US',{maximumFractionDigits:0});
-      const rowHtml = (label, arr, total=null) => {
-        const t = (total==null) ? '' : fmt(total);
-        return `
-          <tr${label==='Discounted Cash Flows' || label==='Present Value of Terminal Value' ? ' class="bold-row"' : ''}>
-            <td style="text-align:left;">${label}</td>
-            <td>${fmt(arr[0])}</td>
-            <td>${fmt(arr[1])}</td>
-            <td>${fmt(arr[2])}</td>
-            <td>${fmt(arr[3])}</td>
-            <td>${fmt(arr[4])}</td>
-            <td>${t}</td>
-          </tr>`;
-      };
-
-      if(!stored){
-        pvBody.innerHTML = '';
-        evElem.innerText = '$0';
-        return;
-      }
-
-      const { fcff } = JSON.parse(stored) || {};
-      if (!fcff || fcff.length !== 5){
-        pvBody.innerHTML = '';
-        evElem.innerText = '$0';
-        return;
-      }
-
-      const r = parseFloat(document.getElementById('valRate').value)/100;
-      const g = parseFloat(document.getElementById('valGrowth').value)/100;
-      const useMidYear = document.getElementById('midYearToggle').checked;
-
-      const t = fcff.map((_,i)=>i+1);
-      const effectivePeriods = t.map(v => useMidYear ? (v - 0.5) : v);
-      const pvFactors = effectivePeriods.map(v => 1/Math.pow(1+r, v));
-      const discounted = fcff.map((cf,i) => cf * pvFactors[i]);
-      const sumPV = discounted.reduce((a,b)=>a+b,0);
-
-      const lastFCFF = fcff[fcff.length-1];
-      const tv = lastFCFF * (1 + g) / (r - g);
-
-      const tvFactor = 1/Math.pow(1+r, useMidYear ? (t[t.length-1] - 0.5) : t[t.length-1]);
-      const pvTV = tv * tvFactor;
-
-      const ev = sumPV + pvTV;
-
-      const blank = [null,null,null,null,null];
-      const timePeriodsArr = effectivePeriods.map(v => Number(v.toFixed(1)));
-      const pvFactorsArr   = pvFactors.map(v => Number.isFinite(v) ? Number(v.toFixed(3)) : null);
-      const discountedArr  = discounted;
-
-      const tvArr          = blank.slice();      tvArr[4] = tv;
-      const tvFactorArr    = blank.slice();      tvFactorArr[4] = Number(tvFactor.toFixed(3));
-      const pvTvArr        = blank.slice();      pvTvArr[4] = pvTV;
-
-      pvBody.innerHTML = [
-        rowHtml('Unlevered Free Cash Flow', fcff, null),
-        rowHtml('Time Period (years)', timePeriodsArr, null),
-        rowHtml('Present Value Factor', pvFactorsArr, null),
-        rowHtml('Discounted Cash Flows', discountedArr, sumPV),
-        rowHtml('Terminal Value', tvArr, tv),
-        rowHtml('PV Factor (for TV)', tvFactorArr, tvFactor),
-        rowHtml('Present Value of Terminal Value', pvTvArr, pvTV),
-        `<tr class="bold-row">
-           <td style="text-align:left;">Enterprise Value</td>
-           <td>-</td><td>-</td><td>-</td><td>-</td><td>-</td>
-           <td>${fmt(ev)}</td>
-         </tr>`
-      ].join('');
-
-      evElem.innerText = '$' + ev.toLocaleString('en-US',{maximumFractionDigits:0});
-      evElem.style.transition = 'all 0.3s ease';
-      evElem.style.transform = 'scale(1.15)';
-      evElem.style.textShadow = '0 0 15px rgba(0,123,255,.6)';
-      setTimeout(()=>{
-        evElem.style.transform = 'scale(1)';
-        evElem.style.textShadow = '0 0 10px rgba(0,123,255,.3)';
-      },300);
-
-      setTimingBadge();
-    }
-
-    // Accordion toggle for Formulas Appendix
-    (function () {
-      const card = document.getElementById('formulasAppendix');
-      if (!card) return;
-      const header = card.querySelector('.accordion-header');
-      const panel  = card.querySelector('.accordion-panel');
-
-      function setOpen(isOpen){
-        card.classList.toggle('open', isOpen);
-        header.setAttribute('aria-expanded', String(isOpen));
-        if (isOpen) {
-          panel.style.maxHeight = panel.scrollHeight + 'px';
-        } else {
-          panel.style.maxHeight = '0px';
+        switch(metric){
+          case 'Revenue': return revenue;
+          case 'COGS': return cogs;
+          case 'Gross Profit': return gp;
+          case 'SG&A': return sga;
+          case 'R&D': return rnd;
+          case 'Operating Income (EBIT)': return ebit;
+          case 'Income Tax': return tax;
+          case 'D&A': return da;
+          case 'CapEx': return capex;
+          case 'Δ Working Capital': return wc;
+          case 'FCFF': return fcff;
+          case 'Reinvestment': return reinv;
+          case 'FCFF (Reinvestment)': return fcffR;
+          default: return [null,null,null,null];
         }
       }
-      setOpen(false);
-      header.addEventListener('click', () => setOpen(!card.classList.contains('open')));
-      window.addEventListener('resize', () => {
-        if (card.classList.contains('open')) panel.style.maxHeight = panel.scrollHeight + 'px';
-      });
-    })();
 
-    // Wire controls + initial load
+      years.forEach(y=>{
+        metricsList().forEach(metric=>{
+          out[metric][y] = getQArrForBase(metric,y);
+        });
+      });
+
+      return out;
+    }
+
+    function refreshQuarterlyFromAnnualIfVisible(){
+      if (viewMode !== 'quarterly') return;
+
+      const qHist = window._quarterlyHist;
+      const hasQuarterly = !!(qHist?.Revenue?.[2024] && qHist.Revenue[2024].some(v => v != null));
+      const annualNums = readAnnualTableAsNumbers();
+
+      const annualProjByMetric = {};
+      for (const metric of metricsList()){
+        annualProjByMetric[metric] = {};
+        for (const y of [2025,2026,2027,2028,2029]){
+          annualProjByMetric[metric][y] = annualNums?.[metric]?.[y] ?? null;
+        }
+      }
+
+      const weights = (hasQuarterly && quarterProjMethod === 'derived')
+        ? computeSeasonalWeightsFrom2024(qHist)
+        : [0.25,0.25,0.25,0.25];
+
+      const qProj = deriveQuarterlyFromAnnual(annualProjByMetric, weights);
+
+      let noticeText = '';
+      if (!hasQuarterly) {
+        noticeText =
+          `Quarterly historicals are not available from the API response (no quarter/period/date fields detected), ` +
+          `so the quarterly table is showing annual totals allocated into quarters (for transparency on projections). ` +
+          `If you add a quarter field (calendar_quarter / period=Q1..Q4 / date), this view will reconcile real Q1–Q4 to annual totals.`;
+      } else {
+        noticeText =
+          `Quarterly historicals are real (Q1–Q4). Quarterly projections are ${quarterProjMethod === 'flat' ? 'flat (25% each)' : 'derived using 2024 seasonal weights'}. ` +
+          `Annual PV remains annual.`;
+      }
+
+      renderQuarterlyTable(qHist, qProj, noticeText);
+    }
+
+    // =========================
+    // Events: UI
+    // =========================
     document.getElementById('valRecalc').addEventListener('click', recalcValuation);
+
+    document.getElementById('viewAnnualBtn').addEventListener('click', () => {
+      viewMode = 'annual';
+      setViewButtons();
+      localStorage.setItem('dcf_view_mode','annual');
+      rebuildChartForCurrentView();
+    });
+
+    document.getElementById('viewQuarterlyBtn').addEventListener('click', () => {
+      viewMode = 'quarterly';
+      setViewButtons();
+      localStorage.setItem('dcf_view_mode','quarterly');
+      refreshQuarterlyFromAnnualIfVisible();
+      rebuildChartForCurrentView();
+    });
+
+    document.getElementById('qProjDerivedBtn').addEventListener('click', () => {
+      quarterProjMethod = 'derived';
+      setQuarterProjButtons();
+      localStorage.setItem('dcf_qproj_mode','derived');
+      refreshQuarterlyFromAnnualIfVisible();
+      if (viewMode === 'quarterly') renderChartQuarterly();
+    });
+
+    document.getElementById('qProjFlatBtn').addEventListener('click', () => {
+      quarterProjMethod = 'flat';
+      setQuarterProjButtons();
+      localStorage.setItem('dcf_qproj_mode','flat');
+      refreshQuarterlyFromAnnualIfVisible();
+      if (viewMode === 'quarterly') renderChartQuarterly();
+    });
 
     document.addEventListener('DOMContentLoaded', async () => {
       const tickerSelect = document.getElementById('tickerSelect');
@@ -624,25 +1505,37 @@
 
       // restore mid-year preference
       const pref = localStorage.getItem('dcf_midyear_enabled');
-      if (pref !== null) {
-        document.getElementById('midYearToggle').checked = (pref === '1');
-        setTimingBadge();
-      }
+      if (pref !== null) document.getElementById('midYearToggle').checked = (pref === '1');
+      setTimingBadge();
 
+      // restore view mode preference
+      const vm = localStorage.getItem('dcf_view_mode');
+      if (vm === 'quarterly' || vm === 'annual') viewMode = vm;
+      setViewButtons();
+
+      // restore quarterly proj method
+      const qm = localStorage.getItem('dcf_qproj_mode');
+      if (qm === 'flat' || qm === 'derived') quarterProjMethod = qm;
+      setQuarterProjButtons();
+
+      // Load tickers
       try {
         const res = await fetch(`${API_BASE}/companies`);
         const list = await res.json();
         tickerSelect.innerHTML = list.map(t => `<option>${t}</option>`).join('');
       } catch (e) {
         console.error('Error loading tickers:', e);
+        tickerSelect.innerHTML = `<option>AAPL</option>`;
       }
 
       async function loadTicker(t){
         window._currentTicker = t;
-        mainTitle.childNodes[0].nodeValue = `DCF Valuation — ${t} `; // keep badge intact
+        mainTitle.childNodes[0].nodeValue = `DCF Valuation — ${t} `;
         iframe.src = `calculations.html?ticker=${t}`;
         await populateHistoricalData(t);
         recalcValuation();
+        refreshQuarterlyFromAnnualIfVisible();
+        rebuildChartForCurrentView();
       }
 
       await loadTicker(tickerSelect.value || 'AAPL');
@@ -660,8 +1553,40 @@
 
       // Recalc when timing convention toggles
       document.getElementById('midYearToggle').addEventListener('change', recalcValuation);
+
+      // Story mode events
+      document.getElementById('storyToggle').addEventListener('change', () => {
+        const on = document.getElementById('storyToggle').checked;
+        localStorage.setItem('dcf_story_enabled', on ? '1' : '0');
+        setModePill();
+        setAnnualProjectionEditability(on);
+        applyStoryProjection();
+        updateAnnualComputedLines();
+        refreshChartIfNeeded();
+        refreshQuarterlyFromAnnualIfVisible();
+        if (viewMode === 'quarterly') renderChartQuarterly();
+      });
+
+      document.getElementById('projMethod').addEventListener('change', () => {
+        applyStoryProjection();
+        updateAnnualComputedLines();
+        refreshChartIfNeeded();
+        refreshQuarterlyFromAnnualIfVisible();
+        if (viewMode === 'quarterly') renderChartQuarterly();
+      });
+
+      ['g0','gT','gFade','m0','mT','mFade','salesToCap','roicT','taxStory'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('input', () => {
+          applyStoryProjection();
+          updateAnnualComputedLines();
+          refreshChartIfNeeded();
+          refreshQuarterlyFromAnnualIfVisible();
+          if (viewMode === 'quarterly') renderChartQuarterly();
+        });
+      });
     });
   </script>
 </body>
 </html>
-
